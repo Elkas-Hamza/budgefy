@@ -1,6 +1,7 @@
 @echo off
-REM Start Backend laravel
-start "Symfony Backend laravel" cmd /k "php artisan serve--port=9002"
-REM Start Frontend
-start "vue js frontend" cmd /k "npm run dev"
+REM Start Laravel Backend
+start "Symfony Backend Laravel" cmd /k "cd /d Backend && php artisan serve --port=9002"
+
+REM Start Vue.js Frontend
+start "Vue.js Frontend" cmd /k "cd /d frontend  && npm run dev -- --port 9000"
 pause
