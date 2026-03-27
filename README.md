@@ -116,4 +116,4 @@ php artisan test
 
 ## Licence
 
-Ce projet est destine a un cadre academique/projet PFA. Adaptez la licence selon vos besoins avant une publication publique.
+Ce projet est destine a un cadre academique/projet PFA.
