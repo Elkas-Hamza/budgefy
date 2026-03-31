@@ -5,6 +5,7 @@ const count = ref(0)
 
 <template>
          <h1>hello</h1>
+         <p>hyper</p>
 
   <div class="ticks"></div>
   <section id="spacer"></section>
