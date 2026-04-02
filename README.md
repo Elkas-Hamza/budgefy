@@ -53,7 +53,7 @@ npm install
 Depuis `Backend/`:
 
 ```bash
-composer run dev
+php artisan serve
 ```
 
 ### Frontend Vue
