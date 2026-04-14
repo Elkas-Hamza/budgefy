@@ -20,7 +20,8 @@ Il permet de :
 
 ### 📷 Diagramme :
 
-![Use Case Diagram](https://github.com/user-attachments/assets/3bc3855d-4e76-45d7-be51-eccfab2fdeef)
+[use case.pdf](https://github.com/user-attachments/files/26701750/use.case.pdf)
+
 
 ---
 
@@ -38,7 +39,8 @@ Ce diagramme décrit l’architecture logique du système.
 
 ### 📷 Diagramme :
 
-![Class Diagram](https://github.com/user-attachments/assets/d90fa9eb-a0c1-4a03-b1dc-822c13b5751b)
+[class diagramme.pdf](https://github.com/user-attachments/files/26701752/class.diagramme.pdf)
+
 
 ---
 
@@ -58,6 +60,9 @@ Ce diagramme permet de comprendre le fonctionnement dynamique du système.
 ![Sequence Diagram](https://github.com/user-attachments/assets/2c3c59fa-6144-40f8-8ea6-eecae5ea0528)
 
 ---
+### cahier de charge
+https://docs.google.com/document/d/1l0-EEJcDoZgbxNDY9OIuP47KV-9KUzzK/edit?usp=sharing&ouid=112950836834543184521&rtpof=true&sd=true
+
 
 # 🎯 Conclusion
 
