@@ -19,6 +19,8 @@ Il permet de :
 - Comprendre les fonctionnalités principales
 
 ### 📷 Diagramme :
+<img width="1126" height="841" alt="image" src="https://github.com/user-attachments/assets/0b85f504-51c5-4155-ae0a-ea61908e5c2a" />
+
 
 [use case.pdf](https://github.com/user-attachments/files/26701750/use.case.pdf)
 
@@ -38,6 +40,8 @@ Il contient :
 Ce diagramme décrit l’architecture logique du système.
 
 ### 📷 Diagramme :
+
+<img width="1043" height="761" alt="image" src="https://github.com/user-attachments/assets/56c9ba1a-5682-4cd4-a779-71a506b84850" />
 
 [class diagramme.pdf](https://github.com/user-attachments/files/26701752/class.diagramme.pdf)
 
