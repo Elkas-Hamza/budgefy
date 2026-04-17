@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use Database\Seeders\FinanceSeeder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -25,6 +26,8 @@ class AuthController extends Controller
             'email' => $validated['email'],
             'password' => $validated['password'],
         ]);
+
+        (new FinanceSeeder)->seedForUser($user);
 
         $token = $this->issueToken($user->id);
 

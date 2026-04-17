@@ -1,0 +1,35 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "format-backend-php-dirty",
+			"type": "shell",
+			"command": "cd Backend && ./vendor/bin/pint --dirty --format agent",
+			"isBackground": false
+		},
+		{
+			"label": "test-backend-compact",
+			"type": "shell",
+			"command": "cd Backend && php artisan test --compact",
+			"isBackground": false
+		},
+		{
+			"label": "build-frontend",
+			"type": "shell",
+			"command": "cd Frontend && npm run build",
+			"isBackground": false
+		},
+		{
+			"label": "list-api-routes",
+			"type": "shell",
+			"command": "cd Backend && php artisan route:list --path=api --compact",
+			"isBackground": false
+		},
+		{
+			"label": "list-api-routes-plain",
+			"type": "shell",
+			"command": "cd Backend && php artisan route:list --path=api",
+			"isBackground": false
+		}
+	]
+}
