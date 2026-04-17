@@ -7,7 +7,7 @@
 <div class="size-8 flex items-center justify-center bg-primary/10 rounded-lg">
 <span class="material-symbols-outlined text-primary">account_balance_wallet</span>
 </div>
-<h2 class="text-slate-900 dark:text-white text-xl font-bold leading-tight tracking-tight">BudgetPro</h2>
+<h2 class="text-slate-900 dark:text-white text-xl font-bold leading-tight tracking-tight">Budgefy</h2>
 </div>
 <div class="flex flex-1 justify-end gap-8">
 <nav class="hidden md:flex items-center gap-9">
@@ -87,7 +87,7 @@
 <div class="max-w-7xl mx-auto px-6 md:px-20">
 <div class="flex flex-col gap-4 mb-16 text-center max-w-3xl mx-auto">
 <h2 class="text-slate-900 dark:text-white text-3xl md:text-4xl font-bold leading-tight">
-                                Pourquoi choisir BudgetPro ?
+                                Pourquoi choisir Budgefy ?
                             </h2>
 <p class="text-slate-600 dark:text-slate-400 text-lg">
                                 Tout ce dont vous avez besoin pour maîtriser votre argent sans effort au quotidien.
@@ -133,7 +133,7 @@
 <div class="max-w-4xl mx-auto px-6 md:px-20 py-24">
 <div class="text-center mb-16">
 <h2 class="text-slate-900 dark:text-white text-3xl md:text-4xl font-bold leading-tight mb-4">Questions Fréquemment Posées</h2>
-<p class="text-slate-600 dark:text-slate-400">Nous sommes là pour répondre à toutes vos interrogations sur BudgetPro.</p>
+<p class="text-slate-600 dark:text-slate-400">Nous sommes là pour répondre à toutes vos interrogations sur Budgefy.</p>
 </div>
 <div class="flex flex-col gap-4">
 <details class="group rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-background-dark/50 px-6 py-4" open="">
@@ -155,7 +155,7 @@
 </div>
 </summary>
 <div class="text-slate-600 dark:text-slate-400 text-base font-normal leading-relaxed pb-4 pt-2 border-t border-slate-100 dark:border-slate-800 mt-2">
-                                BudgetPro offre une synchronisation bancaire automatique, la catégorisation intelligente des dépenses par IA, la création de budgets mensuels, le suivi d'objectifs d'épargne, et des analyses graphiques avancées pour visualiser votre patrimoine net.
+                                Budgefy offre une synchronisation bancaire automatique, la catégorisation intelligente des dépenses par IA, la création de budgets mensuels, le suivi d'objectifs d'épargne, et des analyses graphiques avancées pour visualiser votre patrimoine net.
                             </div>
 </details>
 <details class="group rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-background-dark/50 px-6 py-4">
@@ -206,7 +206,7 @@
 <div class="col-span-2 md:col-span-1 flex flex-col gap-4">
 <div class="flex items-center gap-2 text-primary">
 <span class="material-symbols-outlined font-bold">account_balance_wallet</span>
-<span class="font-bold text-xl text-slate-900 dark:text-white">BudgetPro</span>
+<span class="font-bold text-xl text-slate-900 dark:text-white">Budgefy</span>
 </div>
 <p class="text-slate-500 text-sm leading-relaxed">
                             L'application intelligente pour gérer votre argent, épargner davantage et vivre sereinement.

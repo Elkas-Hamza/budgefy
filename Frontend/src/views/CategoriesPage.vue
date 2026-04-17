@@ -18,7 +18,7 @@
             <h2
               class="text-slate-900 dark:text-white text-lg font-bold leading-tight tracking-tight"
             >
-              BudgetPro
+              Budgefy
             </h2>
           </div>
           <label class="hidden lg:flex flex-col min-w-40 h-10 max-w-64">

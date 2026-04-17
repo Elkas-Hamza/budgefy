@@ -109,6 +109,8 @@ const submitAuth = async () => {
 const socialNotImplemented = () => {
   errorMessage.value = "Connexion sociale non implementee pour le moment.";
 };
+
+const dark_light = window.dark_light;
 </script>
 
 <template>
@@ -125,7 +127,7 @@ const socialNotImplemented = () => {
         <h2
           class="text-slate-900 dark:text-white text-xl font-bold leading-tight tracking-[-0.015em]"
         >
-          BudgetMaster
+          Budgefy
         </h2>
       </div>
       <div class="flex items-center gap-6">
@@ -135,11 +137,16 @@ const socialNotImplemented = () => {
             href="#"
             >Aide</a
           >
-          <a
+          <router-link
             class="text-slate-600 dark:text-slate-300 text-sm font-medium hover:text-primary transition-colors"
-            href="#"
-            >A propos</a
-          >
+            to="/"
+            > <span> Home page</span>
+          </router-link>
+          <button @click="dark_light()"
+  class="flex items-center justify-center rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+  <span class="material-symbols-outlined dark:hidden">dark_mode</span>
+  <span class="material-symbols-outlined hidden dark:block">light_mode</span>
+</button>
         </div>
         <router-link
           class="flex min-w-[100px] cursor-pointer items-center justify-center rounded-lg h-10 px-4 bg-primary text-white text-sm font-bold leading-normal tracking-[0.015em] hover:bg-primary/90 transition-all"

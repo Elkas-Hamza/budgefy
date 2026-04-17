@@ -6,7 +6,7 @@
 <div class="flex items-center gap-8">
 <div class="flex items-center gap-3 text-primary">
 <span class="material-symbols-outlined text-3xl">account_balance_wallet</span>
-<h1 class="text-slate-900 dark:text-white text-lg font-extrabold tracking-tight">Financify</h1>
+<h1 class="text-slate-900 dark:text-white text-lg font-extrabold tracking-tight">Budgefy</h1>
 </div>
 <nav class="hidden md:flex items-center gap-6">
 <router-link class="text-slate-600 dark:text-slate-400 hover:text-primary dark:hover:text-primary text-sm font-semibold transition-colors" to="/dashboard">Tableau de bord</router-link>
@@ -224,7 +224,7 @@
 <div class="flex items-center justify-between px-6 py-4 bg-slate-50/50 dark:bg-slate-900/40">
 <p class="text-sm text-slate-500 dark:text-slate-400">Affichage de <span class="font-bold text-slate-900 dark:text-white">1 à 5</span> sur <span class="font-bold text-slate-900 dark:text-white">42</span> transactions</p>
 <div class="flex gap-2">
-<button class="p-2 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-white dark:hover:bg-slate-800 transition-colors disabled:opacity-50" disabled="">
+<button class="p-2 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-white dark:hover:bg-slate-800 transition-colors disabled:opacity-50" disabled="false">
 <span class="material-symbols-outlined text-sm">chevron_left</span>
 </button>
 <button class="px-3.5 py-2 text-sm font-bold bg-primary text-white rounded-lg">1</button>
