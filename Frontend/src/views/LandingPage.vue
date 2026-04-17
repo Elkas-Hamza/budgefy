@@ -72,7 +72,7 @@
 <div class="order-1 lg:order-2">
 <div class="relative">
 <div class="absolute -inset-4 bg-primary/20 rounded-3xl blur-3xl opacity-30"></div>
-/** updates images **/
+<!---- updates --->
 <div class="relative bg-gradient-to-br from-primary/10 to-transparent rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-2xl aspect-video w-full flex items-center justify-center" data-alt="Dashboard showing financial charts and expense tracking graphs" style='background-image: url("https://images.unsplash.com/photo-1516570161787-2fd917215a3d?q=80&w=1470&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"); background-size: cover; background-position: center;'>
 <div class="absolute inset-0 bg-slate-900/40 flex items-center justify-center">
 <div class="size-16 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/30 cursor-pointer hover:scale-110 transition-transform">
