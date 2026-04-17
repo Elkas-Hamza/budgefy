@@ -3,14 +3,15 @@ import './style.css'
 import App from './App.vue'
 import router from './router'
 
-createApp(App).use(router).mount('#app')
-
-
 const dark_light = (m) => {
-    const mode = m ?? (localStorage.mode === 'dark' ? 'light' : 'dark')
-    document.documentElement.classList.toggle('dark', mode === 'dark')
-    localStorage.mode = mode
-  }
-dark_light(localStorage.mode)
+  const savedMode = localStorage.getItem('mode')
+  const mode = m ?? (savedMode === 'dark' ? 'light' : 'dark')
+  document.documentElement.classList.toggle('dark', mode === 'dark')
+  localStorage.setItem('mode', mode)
+}
+
 window.dark_light = dark_light
+dark_light(localStorage.getItem('mode'))
+
+createApp(App).use(router).mount('#app')
 
