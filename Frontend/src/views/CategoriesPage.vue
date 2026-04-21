@@ -1,92 +1,122 @@
+<script setup>
+import { onMounted, ref } from 'vue'
+
+const authUser = ref(null)
+const isSidebarCollapsed = ref(false)
+const dark_light = window.dark_light
+
+const toggleSidebar = () => {
+  isSidebarCollapsed.value = !isSidebarCollapsed.value
+}
+
+onMounted(() => {
+  const rawUser = localStorage.getItem('auth_user')
+  if (rawUser) {
+    try {
+      authUser.value = JSON.parse(rawUser)
+    } catch {
+      localStorage.removeItem('auth_user')
+    }
+  }
+})
+</script>
+
 <template>
-  <div
-    class="relative flex h-auto min-h-screen w-full flex-col group/design-root overflow-x-hidden"
-  >
-    <div class="layout-container flex h-full grow flex-col">
-      <header
-        class="flex items-center justify-between whitespace-nowrap border-b border-solid border-slate-200 dark:border-slate-800 px-6 md:px-20 py-3 bg-white dark:bg-background-dark sticky top-0 z-50"
+  <div class="min-h-screen bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100">
+    <div class="flex min-h-screen overflow-hidden">
+      <aside
+        class="hidden lg:flex bg-white dark:bg-[#16222c] border-r border-slate-200 dark:border-slate-800 flex-col transition duration-300"
+        :class="isSidebarCollapsed ? 'w-20' : 'w-72'"
       >
-        <div class="flex items-center gap-8">
-          <div class="flex items-center gap-4 text-primary">
-            <div
-              class="size-8 bg-primary/20 rounded-lg flex items-center justify-center"
-            >
-              <span class="material-symbols-outlined text-primary"
-                >account_balance_wallet</span
-              >
-            </div>
-            <h2
-              class="text-slate-900 dark:text-white text-lg font-bold leading-tight tracking-tight"
-            >
-              Budgefy
-            </h2>
-          </div>
-          <label class="hidden lg:flex flex-col min-w-40 h-10 max-w-64">
-            <div
-              class="flex w-full flex-1 items-stretch rounded-lg h-full overflow-hidden"
-            >
-              <div
-                class="text-slate-400 dark:text-slate-500 flex border-none bg-slate-100 dark:bg-slate-800 items-center justify-center pl-4"
-              >
-                <span class="material-symbols-outlined text-xl">search</span>
-              </div>
-              <input
-                class="form-input flex w-full min-w-0 flex-1 border-none bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-0 focus:ring-0 h-full placeholder:text-slate-400 dark:placeholder:text-slate-500 px-4 text-sm font-normal"
-                placeholder="Rechercher une catégorie..."
-                value=""
-              />
-            </div>
-          </label>
-        </div>
-        <div class="flex flex-1 justify-end gap-6 items-center">
-          <nav class="hidden md:flex items-center gap-6">
-            <router-link
-              class="text-slate-600 dark:text-slate-400 hover:text-primary dark:hover:text-primary text-sm font-medium transition-colors"
-              to="/dashboard"
-              >Tableau de bord</router-link
-            >
-            <router-link
-              class="text-slate-600 dark:text-slate-400 hover:text-primary dark:hover:text-primary text-sm font-medium transition-colors"
-              to="/transactions"
-              >Transactions</router-link
-            >
-            <router-link
-              class="text-primary text-sm font-bold border-b-2 border-primary pb-1"
-              to="/categories"
-              >Catégories</router-link
-            >
-            <a
-              class="text-slate-600 dark:text-slate-400 hover:text-primary dark:hover:text-primary text-sm font-medium transition-colors"
-              href="#"
-              >Rapports</a
-            >
-          </nav>
-          <div class="flex gap-2">
+        <div class="p-6 flex items-center gap-3">
+          <div class="size-10 rounded-lg bg-primary flex items-center justify-center text-white">
             <button
-              class="flex items-center justify-center rounded-lg size-10 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+            class="hidden lg:flex size-10 items-center justify-center rounded-lg"
+            type="button"
+            @click="toggleSidebar"
             >
-              <span class="material-symbols-outlined">notifications</span>
-            </button>
-            <router-link
-              class="flex items-center justify-center rounded-lg size-10 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
-              to="/settings"
-            >
-              <span class="material-symbols-outlined">settings</span>
-            </router-link>
+            <span class="material-symbols-outlined text-slate-900 dark:text-white">account_balance_wallet</span>
+        </button>
           </div>
-          <div
-            class="bg-primary/10 rounded-full size-10 flex items-center justify-center border border-primary/20 overflow-hidden"
-          >
-            <img
-              alt="Profile"
-              class="w-full h-full object-cover"
-              data-alt="User avatar illustration"
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuDq6hnGmNz1a5MagGKZaubddOxkuzJyDEUC7ieitaJdSq1E53G2co4pnyi2u9q_RDbHJwcsLPaiP7rJKChWjf4O9fzYIMsaIcyZ_6xnIYL4uOzi4kcuLpX6HZIJsoU-b53e_rkE7ZTkmjLPEZLpIwDUAT2o3hs7D9QrJIcVEJqMK8-i6Xu_knFzMFAP9kdEP6dFrgTQWkMTcMl48otXwVjNkTYOPQmeLdoZN2ythq4Dxn2FeP9zA3BE6K-psYBlHSex-EWR-g7DR0ao"
-            />
+          <div v-show="!isSidebarCollapsed">
+            <h1 class="text-lg font-bold leading-none text-slate-900 dark:text-white">Budgefy</h1>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Economisez intelligemment</p>
           </div>
         </div>
-      </header>
-      <main class="flex-1 px-6 md:px-20 py-8 max-w-[1400px] mx-auto w-full">
+
+        <nav class="flex-1 px-4 py-4 space-y-1">
+          <router-link
+            class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            to="/dashboard"
+          >
+            <span class="material-symbols-outlined text-[22px]">dashboard</span>
+            <span v-show="!isSidebarCollapsed" class="text-sm">Tableau de bord</span>
+          </router-link>
+          <router-link
+            class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            to="/transactions"
+          >
+            <span class="material-symbols-outlined text-[22px]">receipt_long</span>
+            <span v-show="!isSidebarCollapsed" class="text-sm">Transactions</span>
+          </router-link>
+          <router-link
+            class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-primary/10 text-primary font-semibold"
+            to="/categories"
+          >
+            <span class="material-symbols-outlined text-[22px]">label</span>
+            <span v-show="!isSidebarCollapsed" class="text-sm">Categories</span>
+          </router-link>
+          <router-link
+            class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            to="/settings"
+          >
+            <span class="material-symbols-outlined text-[22px]">settings</span>
+            <span v-show="!isSidebarCollapsed" class="text-sm">Parametres</span>
+          </router-link>
+        </nav>
+        <div class="p-8 border-t border-slate-200 dark:border-slate-800 mt-auto flex items-center">
+
+        </div>
+        <div class="p-4 border-t border-slate-200 dark:border-slate-800">
+          <div
+            class="p-4 rounded-xl bg-slate-100 dark:bg-slate-800/50 flex items-center gap-3"
+          >
+            <div class="size-10 rounded-full bg-slate-300 dark:bg-slate-700 overflow-hidden grid place-items-center">
+              <span class="material-symbols-outlined text-slate-600 dark:text-slate-200">person</span>
+            </div>
+            <div v-show="!isSidebarCollapsed" class="flex-1 min-w-0">
+              <p class="text-sm font-semibold truncate text-slate-900 dark:text-white">{{ authUser?.name || 'Utilisateur' }}</p>
+              <p class="text-xs text-slate-500 dark:text-slate-400 truncate">
+                {{ authUser?.email || 'Compte connecte' }}
+              </p>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <main class="flex-1 overflow-y-auto flex flex-col">
+        <header
+          class="sticky top-0 z-10 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-md px-5 md:px-8 py-4 border-b border-slate-200 dark:border-slate-800"
+        >
+          <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <h2 class="text-xl font-bold text-slate-900 dark:text-white">Gestion des Categories</h2>
+              <p class="text-sm text-slate-500 dark:text-slate-400">Organisez vos flux financiers</p>
+            </div>
+
+            <div class="flex items-center gap-3">
+              <button
+                class="size-10 flex items-center justify-center rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+                type="button"
+                @click="dark_light()"
+              >
+                <span class="material-symbols-outlined dark:hidden">dark_mode</span>
+                <span class="material-symbols-outlined hidden dark:block">light_mode</span>
+              </button>
+            </div>
+          </div>
+        </header>
+        <div class="p-5 md:p-8 space-y-8 flex-1">
         <div
           class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8"
         >
@@ -480,14 +510,11 @@
             </button>
           </div>
         </div>
+        </div>
+        <footer class="px-8 py-6 border-t border-slate-200 dark:border-slate-800 text-center text-slate-500 dark:text-slate-400 text-sm">
+          <p>© 2026 Gestion Budgetaire Personnelle. Tous droits reserves.</p>
+        </footer>
       </main>
-      <footer
-        class="mt-auto border-t border-slate-200 dark:border-slate-800 py-6 px-6 md:px-20 bg-white dark:bg-background-dark text-center"
-      >
-        <p class="text-slate-500 dark:text-slate-400 text-sm">
-          © 2026 Gestion Budgétaire Personnelle. Tous droits réservés.
-        </p>
-      </footer>
     </div>
   </div>
 </template>

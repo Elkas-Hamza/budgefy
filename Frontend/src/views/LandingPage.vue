@@ -60,9 +60,6 @@
                 >
                   Commencer Gratuitement
                 </router-link>
-<button class="flex min-w-[180px] cursor-pointer items-center justify-center rounded-xl h-14 px-8 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-lg font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
-                                    Voir la Démo
-                                </button>
 </div>
 <div class="flex items-center gap-4 text-slate-500 dark:text-slate-400 text-sm">
 <div class="flex -space-x-2"><img alt="User 1" class="w-8 h-8 rounded-full border-2 border-background-light dark:border-background-dark object-cover" src="https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"/><img alt="User 2" class="w-8 h-8 rounded-full border-2 border-background-light dark:border-background-dark object-cover" src="https://plus.unsplash.com/premium_photo-1690407617542-2f210cf20d7e?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"/><img alt="User 3" class="w-8 h-8 rounded-full border-2 border-background-light dark:border-background-dark object-cover" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=1964&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"/></div>

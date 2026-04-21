@@ -1,87 +1,123 @@
+<script setup>
+import { onMounted, ref } from 'vue'
+
+const authUser = ref(null)
+const isSidebarCollapsed = ref(false)
+const dark_light = window.dark_light
+
+const toggleSidebar = () => {
+  isSidebarCollapsed.value = !isSidebarCollapsed.value
+}
+
+onMounted(() => {
+  const rawUser = localStorage.getItem('auth_user')
+  if (rawUser) {
+    try {
+      authUser.value = JSON.parse(rawUser)
+    } catch {
+      localStorage.removeItem('auth_user')
+    }
+  }
+})
+</script>
+
 <template>
-  <div class="layout-container flex h-full grow flex-col">
-    <header
-      class="flex items-center justify-between whitespace-nowrap border-b border-solid border-slate-200 dark:border-slate-800 px-6 py-3 bg-white dark:bg-background-dark sticky top-0 z-50"
-    >
-      <div class="flex items-center gap-8">
-        <div class="flex items-center gap-4 text-primary">
-          <div
-            class="size-8 flex items-center justify-center bg-primary/10 rounded-lg"
-          >
-            <span class="material-symbols-outlined text-primary"
-              >account_balance_wallet</span
+  <div class="min-h-screen bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100">
+    <div class="flex min-h-screen overflow-hidden">
+      <aside
+        class="hidden lg:flex bg-white dark:bg-[#16222c] border-r border-slate-200 dark:border-slate-800 flex-col transition duration-300"
+        :class="isSidebarCollapsed ? 'w-20' : 'w-72'"
+      >
+        <div class="p-6 flex items-center gap-3">
+          <div class="size-10 rounded-lg bg-primary flex items-center justify-center text-white">
+            <button
+            class="hidden lg:flex size-10 items-center justify-center rounded-lg"
+            type="button"
+            @click="toggleSidebar"
             >
+            <span class="material-symbols-outlined text-slate-900 dark:text-white">account_balance_wallet</span>
+        </button>
           </div>
-          <h2
-            class="text-slate-900 dark:text-slate-100 text-lg font-bold leading-tight tracking-[-0.015em]"
-          >
-            GBP
-          </h2>
+          <div v-show="!isSidebarCollapsed">
+            <h1 class="text-lg font-bold leading-none text-slate-900 dark:text-white">Budgefy</h1>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Economisez intelligemment</p>
+          </div>
         </div>
-        <div class="hidden md:flex items-center gap-6">
+
+        <nav class="flex-1 px-4 py-4 space-y-1">
           <router-link
-            class="text-slate-600 dark:text-slate-400 hover:text-primary dark:hover:text-primary text-sm font-medium transition-colors"
+            class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
             to="/dashboard"
-            >Tableau de bord</router-link
           >
+            <span class="material-symbols-outlined text-[22px]">dashboard</span>
+            <span v-show="!isSidebarCollapsed" class="text-sm">Tableau de bord</span>
+          </router-link>
           <router-link
-            class="text-slate-600 dark:text-slate-400 hover:text-primary dark:hover:text-primary text-sm font-medium transition-colors"
+            class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
             to="/transactions"
-            >Transactions</router-link
           >
+            <span class="material-symbols-outlined text-[22px]">receipt_long</span>
+            <span v-show="!isSidebarCollapsed" class="text-sm">Transactions</span>
+          </router-link>
           <router-link
-            class="text-slate-600 dark:text-slate-400 hover:text-primary dark:hover:text-primary text-sm font-medium transition-colors"
+            class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
             to="/categories"
-            >Catégories</router-link
           >
+            <span class="material-symbols-outlined text-[22px]">label</span>
+            <span v-show="!isSidebarCollapsed" class="text-sm">Categories</span>
+          </router-link>
           <router-link
-            class="text-slate-600 dark:text-slate-400 hover:text-primary dark:hover:text-primary text-sm font-medium transition-colors"
+            class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-primary/10 text-primary font-semibold"
             to="/settings"
-            >Paramètres</router-link
           >
-        </div>
-      </div>
-      <div class="flex items-center gap-4">
-        <label class="hidden lg:flex flex-col min-w-40 h-10 max-w-64">
+            <span class="material-symbols-outlined text-[22px]">settings</span>
+            <span v-show="!isSidebarCollapsed" class="text-sm">Parametres</span>
+          </router-link>
+        </nav>
+        <div class="p-4 border-t border-slate-200 dark:border-slate-800">
           <div
-            class="flex w-full flex-1 items-stretch rounded-lg h-full bg-slate-100 dark:bg-slate-800"
+            class="p-4 rounded-xl bg-slate-100 dark:bg-slate-800/50 flex items-center gap-3"
           >
-            <div class="text-slate-400 flex items-center justify-center pl-3">
-              <span class="material-symbols-outlined text-sm">search</span>
+            <div class="size-10 rounded-full bg-slate-300 dark:bg-slate-700 overflow-hidden grid place-items-center">
+              <span class="material-symbols-outlined text-slate-600 dark:text-slate-200">person</span>
             </div>
-            <input
-              class="form-input flex w-full min-w-0 flex-1 border-none bg-transparent focus:ring-0 text-sm"
-              placeholder="Rechercher..."
-              value=""
-            />
+            <div v-show="!isSidebarCollapsed" class="flex-1 min-w-0">
+              <p class="text-sm font-semibold truncate text-slate-900 dark:text-white">{{ authUser?.name || 'Utilisateur' }}</p>
+              <p class="text-xs text-slate-500 dark:text-slate-400 truncate">
+                {{ authUser?.email || 'Compte connecte' }}
+              </p>
+            </div>
           </div>
-        </label>
-        <div class="flex gap-2">
-          <button
-            class="flex size-10 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-primary/10 hover:text-primary transition-all"
-          >
-            <span class="material-symbols-outlined">notifications</span>
-          </button>
-          <button
-            class="flex size-10 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-primary/10 hover:text-primary transition-all"
-          >
-            <span class="material-symbols-outlined">help</span>
-          </button>
         </div>
-        <div
-          class="size-10 rounded-full bg-primary/20 border-2 border-primary/40 overflow-hidden"
-          data-alt="Photo de profil de l'utilisateur"
-          style="
-            background-image: url(&quot;https://lh3.googleusercontent.com/aida-public/AB6AXuBWnNtr5Fjx9BsR5-RNDQlECf7MP0m2vgp7NHlWeP_YL2TXh6CTHLv1utGa1JZBhASrM1wkD3ZvsrZyDYE-pQTGGxT6fsr2sjyKiIsdAY0N-4qkEHTpzzjylnGsAjsK99JjEiXdkUOsiS2J4UUZa_evswUaoDTNvinEsSu-6RJOnDsldEYa7UJ75sGrNKZPQLDqjZtbkGPIWp-J-_oZjXBQGQ_VY1tK9yXYfV-XWF2sr9zB2ExBBpecZrDkWjq7ni_3_Zj4mToARf65&quot;);
-          "
-        ></div>
-      </div>
-    </header>
-    <main class="flex-1 max-w-7xl mx-auto w-full p-6 lg:p-10">
+      </aside>
+
+      <main class="flex-1 overflow-y-auto flex flex-col">
+        <header
+          class="sticky top-0 z-10 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-md px-5 md:px-8 py-4 border-b border-slate-200 dark:border-slate-800"
+        >
+          <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <h2 class="text-xl font-bold text-slate-900 dark:text-white">Parametres</h2>
+              <p class="text-sm text-slate-500 dark:text-slate-400">Gerez votre compte et vos preferences</p>
+            </div>
+
+            <div class="flex items-center gap-3">
+              <button
+                class="size-10 flex items-center justify-center rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+                type="button"
+                @click="dark_light()"
+              >
+                <span class="material-symbols-outlined dark:hidden">dark_mode</span>
+                <span class="material-symbols-outlined hidden dark:block">light_mode</span>
+              </button>
+            </div>
+          </div>
+        </header>
+        <div class="p-5 md:p-8 space-y-8 flex-1">
       <div class="flex flex-col lg:flex-row gap-10">
         <aside class="w-full lg:w-64 flex flex-col gap-2">
           <div class="mb-6">
-            <h1 class="text-2xl font-black tracking-tight">Paramètres</h1>
+            <h1 class="text-2xl font-black tracking-tight text-slate-900 dark:text-white">Paramètres</h1>
             <p class="text-slate-500 dark:text-slate-400 text-sm">
               Gérez votre compte et vos préférences
             </p>
@@ -150,7 +186,7 @@
           >
             <div class="flex items-center justify-between mb-8">
               <div>
-                <h2 class="text-xl font-bold">Mon Profil</h2>
+                <h2 class="text-xl font-bold text-slate-900 dark:text-white">Mon Profil</h2>
                 <p class="text-slate-500 dark:text-slate-400 text-sm">
                   Informations personnelles publiques et privées
                 </p>
@@ -185,7 +221,7 @@
                     >Prénom</label
                   >
                   <input
-                    class="w-full bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg px-4 py-2.5 focus:ring-primary focus:border-primary"
+                    class="w-full bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg px-4 py-2.5 focus:ring-primary focus:border-primary text-slate-900 dark:text-white"
                     type="text"
                     value="Jean"
                   />
@@ -196,7 +232,7 @@
                     >Nom de famille</label
                   >
                   <input
-                    class="w-full bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg px-4 py-2.5 focus:ring-primary focus:border-primary"
+                    class="w-full bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg px-4 py-2.5 focus:ring-primary focus:border-primary text-slate-900 dark:text-white"
                     type="text"
                     value="Dupont"
                   />
@@ -207,7 +243,7 @@
                     >Email</label
                   >
                   <input
-                    class="w-full bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg px-4 py-2.5 focus:ring-primary focus:border-primary"
+                    class="w-full bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg px-4 py-2.5 focus:ring-primary focus:border-primary text-slate-900 dark:text-white"
                     type="email"
                     value="jean.dupont@email.com"
                   />
@@ -220,7 +256,7 @@
             id="preferences"
           >
             <div class="mb-8">
-              <h2 class="text-xl font-bold">Préférences de l'application</h2>
+              <h2 class="text-xl font-bold text-slate-900 dark:text-white">Préférences de l'application</h2>
               <p class="text-slate-500 dark:text-slate-400 text-sm">
                 Personnalisez votre expérience utilisateur
               </p>
@@ -236,14 +272,14 @@
                     <span class="material-symbols-outlined">payments</span>
                   </div>
                   <div>
-                    <p class="font-semibold">Devise principale</p>
+                    <p class="font-semibold text-slate-900 dark:text-white">Devise principale</p>
                     <p class="text-xs text-slate-500">
                       Utilisée pour vos rapports et totaux
                     </p>
                   </div>
                 </div>
                 <select
-                  class="bg-slate-100 dark:bg-slate-800 border-none rounded-lg text-sm font-medium focus:ring-primary min-w-[120px]"
+                  class="bg-slate-100 dark:bg-slate-800 border-none rounded-lg text-sm font-medium focus:ring-primary min-w-[120px] text-slate-900 dark:text-white"
                 >
                   <option value="EUR">Euro (€)</option>
                   <option value="USD">Dollar ($)</option>
@@ -260,12 +296,12 @@
                     <span class="material-symbols-outlined">language</span>
                   </div>
                   <div>
-                    <p class="font-semibold">Langue</p>
+                    <p class="font-semibold  text-slate-900 dark:text-white">Langue</p>
                     <p class="text-xs text-slate-500">Interface utilisateur</p>
                   </div>
                 </div>
                 <select
-                  class="bg-slate-100 dark:bg-slate-800 border-none rounded-lg text-sm font-medium focus:ring-primary min-w-[120px]"
+                  class="bg-slate-100 dark:bg-slate-800 border-none rounded-lg text-sm font-medium focus:ring-primary min-w-[120px] text-slate-900 dark:text-white"
                 >
                   <option value="FR">Français</option>
                   <option value="EN">English</option>
@@ -280,7 +316,7 @@
                     <span class="material-symbols-outlined">dark_mode</span>
                   </div>
                   <div>
-                    <p class="font-semibold">Mode Sombre</p>
+                    <p class="font-semibold text-slate-900 dark:text-white">Mode Sombre</p>
                     <p class="text-xs text-slate-500">
                       Activer le thème sombre automatiquement
                     </p>
@@ -300,7 +336,7 @@
             id="securite"
           >
             <div class="mb-8">
-              <h2 class="text-xl font-bold">Sécurité</h2>
+              <h2 class="text-xl font-bold text-slate-900 dark:text-white">Sécurité</h2>
               <p class="text-slate-500 dark:text-slate-400 text-sm">
                 Gérez l'accès à votre compte financier
               </p>
@@ -313,7 +349,7 @@
                   <span class="material-symbols-outlined text-primary"
                     >key</span
                   >
-                  <h3 class="font-bold">Mot de passe</h3>
+                  <h3 class="font-bold text-slate-900 dark:text-white">Mot de passe</h3>
                 </div>
                 <p class="text-sm text-slate-500 mb-4">
                   Dernière modification il y a 3 mois. Utilisez un mot de passe
@@ -332,7 +368,7 @@
                   <span class="material-symbols-outlined text-green-500"
                     >verified_user</span
                   >
-                  <h3 class="font-bold">Double Authentification (2FA)</h3>
+                  <h3 class="font-bold text-slate-900 dark:text-white">Double Authentification (2FA)</h3>
                 </div>
                 <p class="text-sm text-slate-500 mb-4">
                   Renforcez la sécurité avec un code envoyé sur votre mobile.
@@ -370,13 +406,11 @@
           </section>
         </div>
       </div>
-    </main>
-    <footer
-      class="mt-auto py-8 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-background-dark text-center"
-    >
-      <p class="text-slate-500 dark:text-slate-400 text-sm">
-        © 2026 Gestion Budgétaire Personnelle. Tous droits réservés.
-      </p>
-    </footer>
+        </div>
+        <footer class="px-8 py-6 border-t border-slate-200 dark:border-slate-800 text-center text-slate-500 dark:text-slate-400 text-sm">
+          <p>© 2026 Gestion Budgetaire Personnelle. Tous droits reserves.</p>
+        </footer>
+      </main>
+    </div>
   </div>
 </template>

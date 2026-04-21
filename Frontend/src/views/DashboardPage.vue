@@ -8,6 +8,7 @@ const isLoading = ref(true)
 const errorMessage = ref('')
 const searchTerm = ref('')
 const authUser = ref(null)
+const isSidebarCollapsed = ref(false)
 
 const dashboard = ref({
   summary: {
@@ -226,6 +227,9 @@ const loadDashboard = async () => {
 }
 
 const dark_light = window.dark_light
+const toggleSidebar = () => {
+  isSidebarCollapsed.value = !isSidebarCollapsed.value
+}
 
 onMounted(() => {
   const rawUser = localStorage.getItem('auth_user')
@@ -248,14 +252,21 @@ onMounted(() => {
   >
     <div class="flex min-h-screen overflow-hidden">
       <aside
-        class="hidden lg:flex w-72 bg-white dark:bg-[#16222c] border-r border-slate-200 dark:border-slate-800 flex-col"
+        class="hidden lg:flex bg-white dark:bg-[#16222c] border-r border-slate-200 dark:border-slate-800 flex-col transition duration-300"
+        :class="isSidebarCollapsed ? 'w-21' : 'w-72'"
       >
         <div class="p-6 flex items-center gap-3">
           <div class="size-10 rounded-lg bg-primary flex items-center justify-center text-white">
-            <span class="material-symbols-outlined">account_balance_wallet</span>
+            <button
+            class="hidden lg:flex size-10 items-center justify-center rounded-lg"
+            type="button"
+            @click="toggleSidebar"
+            >
+            <span class="material-symbols-outlined text-slate-900 dark:text-white">account_balance_wallet</span>
+        </button>
           </div>
-          <div>
-            <h1 class="text-lg font-bold leading-none">Budgefy</h1>
+          <div v-show="!isSidebarCollapsed">
+            <h1 class="text-lg font-bold leading-none text-slate-900 dark:text-white">Budgefy</h1>
             <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Economisez intelligemment</p>
           </div>
         </div>
@@ -263,41 +274,50 @@ onMounted(() => {
         <nav class="flex-1 px-4 py-4 space-y-1">
           <router-link
             class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-primary/10 text-primary font-semibold"
+            
             to="/dashboard"
           >
             <span class="material-symbols-outlined text-[22px]">dashboard</span>
-            <span class="text-sm">Tableau de bord</span>
+            <span v-show="!isSidebarCollapsed" class="text-sm">Tableau de bord</span>
           </router-link>
           <router-link
             class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            
             to="/transactions"
           >
             <span class="material-symbols-outlined text-[22px]">receipt_long</span>
-            <span class="text-sm">Transactions</span>
+            <span v-show="!isSidebarCollapsed" class="text-sm">Transactions</span>
           </router-link>
           <router-link
             class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            
             to="/categories"
           >
             <span class="material-symbols-outlined text-[22px]">label</span>
-            <span class="text-sm">Categories</span>
+            <span v-show="!isSidebarCollapsed" class="text-sm">Categories</span>
           </router-link>
           <router-link
             class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            
             to="/settings"
           >
             <span class="material-symbols-outlined text-[22px]">settings</span>
-            <span class="text-sm">Parametres</span>
+            <span v-show="!isSidebarCollapsed" class="text-sm">Parametres</span>
           </router-link>
         </nav>
+        <div class="p-8 border-t border-slate-200 dark:border-slate-800 mt-auto flex items-center ">
 
+        </div>
         <div class="p-4 border-t border-slate-200 dark:border-slate-800">
-          <div class="p-4 rounded-xl bg-slate-100 dark:bg-slate-800/50 flex items-center gap-3">
+          <div
+            class="p-4 rounded-xl bg-slate-100 dark:bg-slate-800/50 flex items-center gap-3"
+            
+          >
             <div class="size-10 rounded-full bg-slate-300 dark:bg-slate-700 overflow-hidden grid place-items-center">
               <span class="material-symbols-outlined text-slate-600 dark:text-slate-200">person</span>
             </div>
-            <div class="flex-1 min-w-0">
-              <p class="text-sm font-semibold truncate">{{ authUser?.name || 'Utilisateur' }}</p>
+            <div v-show="!isSidebarCollapsed" class="flex-1 min-w-0">
+              <p class="text-sm font-semibold truncate text-slate-900 dark:text-white">{{ authUser?.name || 'Utilisateur' }}</p>
               <p class="text-xs text-slate-500 dark:text-slate-400 truncate">
                 {{ authUser?.email || 'Compte connecte' }}
               </p>
@@ -312,11 +332,13 @@ onMounted(() => {
         >
           <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <h2 class="text-xl font-bold">Apercu financier</h2>
+              <h2 class="text-xl font-bold text-slate-900 dark:text-white">Apercu financier</h2>
               <p class="text-sm text-slate-500 dark:text-slate-400">{{ dashboard.period.label }}</p>
             </div>
 
             <div class="flex items-center gap-3">
+
+
               <div class="relative w-full md:w-72">
                 <span
                   class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xl"
@@ -385,7 +407,7 @@ onMounted(() => {
               <div class="lg:col-span-2 bg-white dark:bg-[#1a2632] p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
                 <div class="flex justify-between items-center mb-8">
                   <div>
-                    <h4 class="font-bold text-lg">Revenus vs Depenses</h4>
+                    <h4 class="font-bold text-lg text-slate-900 dark:text-white">Revenus vs Depenses</h4>
                     <p class="text-xs text-slate-500">Comparaison mensuelle des flux</p>
                   </div>
                 </div>
@@ -406,10 +428,10 @@ onMounted(() => {
               </div>
 
               <div class="bg-white dark:bg-[#1a2632] p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col">
-                <h4 class="font-bold text-lg mb-1">Par Categorie</h4>
+                <h4 class="font-bold text-lg mb-1 text-slate-900 dark:text-white">Par Categorie</h4>
                 <p class="text-xs text-slate-500 mb-4">Repartition des depenses</p>
 
-                <p class="text-2xl font-black mb-6">{{ formatCurrency(categoryTotal) }}</p>
+                <p class="text-2xl font-black mb-6 text-slate-900 dark:text-white">{{ formatCurrency(categoryTotal) }}</p>
 
                 <div class="space-y-3">
                   <div
@@ -438,7 +460,7 @@ onMounted(() => {
 
             <div class="bg-white dark:bg-[#1a2632] rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
               <div class="p-6 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
-                <h4 class="font-bold text-lg">Dernieres Transactions</h4>
+                <h4 class="font-bold text-lg text-slate-900 dark:text-white">Dernieres Transactions</h4>
                 <router-link class="text-primary text-sm font-semibold hover:underline" to="/transactions">
                   Voir tout
                 </router-link>
