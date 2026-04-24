@@ -1,20 +1,11 @@
 <script setup>
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
 
 const isSidebarCollapsed = ref(false)
 const authUser = ref(null)
-
-try {
-  const rawUser = localStorage.getItem('auth_user')
-  authUser.value = rawUser ? JSON.parse(rawUser) : null
-} catch {
-  authUser.value = null
-}
-
-const dark_light = window.dark_light
-const toggleSidebar = () => {
-  isSidebarCollapsed.value = !isSidebarCollapsed.value
-}
 
 const SUPPORTED_CURRENCIES = ['EUR', 'USD', 'GBP']
 const SUPPORTED_LANGUAGES = ['FR', 'EN', 'AR']
@@ -33,35 +24,52 @@ const translations = {
     userDefault: 'Utilisateur',
     accountConnected: 'Compte connecte',
     pageTitle: 'Gestion des Transactions',
-    pageSubtitle: 'Suivez et gerez vos revenus et depenses en temps reel.',
+    pageSubtitle: 'Consultez, filtrez et gerez vos transactions.',
     searchPlaceholder: 'Rechercher une transaction...',
-    overviewTitle: 'Apercu des transactions',
-    overviewSubtitle: 'Vue rapide des mouvements recents et du solde global.',
-    addTransaction: 'Ajouter une Transaction',
+    addTransaction: 'Ajouter une transaction',
     totalIncome: 'Revenus Totaux',
     totalExpense: 'Depenses Totales',
     netBalance: 'Solde Net',
     all: 'Toutes',
     incomes: 'Revenus',
     expenses: 'Depenses',
-    moreFilters: 'Plus de filtres',
     thisMonth: 'Ce mois-ci',
     lastMonth: 'Mois dernier',
     thisYear: 'Cette annee',
-    custom: 'Personnalise',
     allCategories: 'Toutes categories',
-    categoryFood: 'Alimentation',
-    categoryLeisure: 'Loisirs',
-    categoryHousing: 'Logement',
-    categorySalary: 'Salaire',
     tableDate: 'Date',
     tableCategory: 'Categorie',
     tableDescription: 'Description',
     tableAmount: 'Montant',
+    tableStatus: 'Statut',
     tableActions: 'Actions',
+    statusCompleted: 'Completee',
+    statusPending: 'En attente',
+    loading: 'Chargement des transactions...',
+    noTransactions: 'Aucune transaction trouvee.',
+    edit: 'Modifier',
+    delete: 'Supprimer',
+    prev: 'Precedent',
+    next: 'Suivant',
     rangeLabel: 'Affichage de',
     onLabel: 'sur',
     transactionsLabel: 'transactions',
+    formCreateTitle: 'Nouvelle transaction',
+    formEditTitle: 'Modifier la transaction',
+    formDescription: 'Description',
+    formAmount: 'Montant',
+    formType: 'Type',
+    formCategory: 'Categorie',
+    formDate: 'Date',
+    formNotes: 'Notes',
+    formStatus: 'Statut',
+    formCancel: 'Annuler',
+    formSaveCreate: 'Creer',
+    formSaveEdit: 'Enregistrer',
+    errLoad: 'Impossible de charger les transactions.',
+    errSave: 'Impossible d enregistrer la transaction.',
+    errDelete: 'Impossible de supprimer la transaction.',
+    confirmDelete: 'Supprimer cette transaction ?',
   },
   EN: {
     navDashboard: 'Dashboard',
@@ -71,10 +79,8 @@ const translations = {
     userDefault: 'User',
     accountConnected: 'Signed in account',
     pageTitle: 'Transaction Management',
-    pageSubtitle: 'Track and manage your income and expenses in real time.',
+    pageSubtitle: 'Browse, filter and manage your transactions.',
     searchPlaceholder: 'Search for a transaction...',
-    overviewTitle: 'Transaction overview',
-    overviewSubtitle: 'Quick view of recent movements and overall balance.',
     addTransaction: 'Add transaction',
     totalIncome: 'Total Income',
     totalExpense: 'Total Expense',
@@ -82,24 +88,43 @@ const translations = {
     all: 'All',
     incomes: 'Income',
     expenses: 'Expenses',
-    moreFilters: 'More filters',
     thisMonth: 'This month',
     lastMonth: 'Last month',
     thisYear: 'This year',
-    custom: 'Custom',
     allCategories: 'All categories',
-    categoryFood: 'Food',
-    categoryLeisure: 'Leisure',
-    categoryHousing: 'Housing',
-    categorySalary: 'Salary',
     tableDate: 'Date',
     tableCategory: 'Category',
     tableDescription: 'Description',
     tableAmount: 'Amount',
+    tableStatus: 'Status',
     tableActions: 'Actions',
+    statusCompleted: 'Completed',
+    statusPending: 'Pending',
+    loading: 'Loading transactions...',
+    noTransactions: 'No transactions found.',
+    edit: 'Edit',
+    delete: 'Delete',
+    prev: 'Previous',
+    next: 'Next',
     rangeLabel: 'Showing',
     onLabel: 'of',
     transactionsLabel: 'transactions',
+    formCreateTitle: 'New transaction',
+    formEditTitle: 'Edit transaction',
+    formDescription: 'Description',
+    formAmount: 'Amount',
+    formType: 'Type',
+    formCategory: 'Category',
+    formDate: 'Date',
+    formNotes: 'Notes',
+    formStatus: 'Status',
+    formCancel: 'Cancel',
+    formSaveCreate: 'Create',
+    formSaveEdit: 'Save',
+    errLoad: 'Could not load transactions.',
+    errSave: 'Could not save transaction.',
+    errDelete: 'Could not delete transaction.',
+    confirmDelete: 'Delete this transaction?',
   },
   AR: {
     navDashboard: 'لوحة التحكم',
@@ -109,10 +134,8 @@ const translations = {
     userDefault: 'مستخدم',
     accountConnected: 'حساب متصل',
     pageTitle: 'إدارة المعاملات',
-    pageSubtitle: 'تابع وادِر دخلك ومصروفاتك بشكل فوري.',
+    pageSubtitle: 'تصفح وفلتر وعدل معاملاتك.',
     searchPlaceholder: 'ابحث عن معاملة...',
-    overviewTitle: 'نظرة على المعاملات',
-    overviewSubtitle: 'عرض سريع للحركات الاخيرة وصافي الرصيد.',
     addTransaction: 'إضافة معاملة',
     totalIncome: 'إجمالي الدخل',
     totalExpense: 'إجمالي المصروف',
@@ -120,24 +143,43 @@ const translations = {
     all: 'الكل',
     incomes: 'الدخل',
     expenses: 'المصروفات',
-    moreFilters: 'مزيد من الفلاتر',
     thisMonth: 'هذا الشهر',
     lastMonth: 'الشهر الماضي',
     thisYear: 'هذه السنة',
-    custom: 'مخصص',
     allCategories: 'كل الفئات',
-    categoryFood: 'طعام',
-    categoryLeisure: 'ترفيه',
-    categoryHousing: 'سكن',
-    categorySalary: 'راتب',
     tableDate: 'التاريخ',
     tableCategory: 'الفئة',
     tableDescription: 'الوصف',
     tableAmount: 'المبلغ',
+    tableStatus: 'الحالة',
     tableActions: 'الإجراءات',
+    statusCompleted: 'مكتملة',
+    statusPending: 'قيد الانتظار',
+    loading: 'جاري تحميل المعاملات...',
+    noTransactions: 'لا توجد معاملات.',
+    edit: 'تعديل',
+    delete: 'حذف',
+    prev: 'السابق',
+    next: 'التالي',
     rangeLabel: 'عرض',
     onLabel: 'من',
     transactionsLabel: 'معاملة',
+    formCreateTitle: 'معاملة جديدة',
+    formEditTitle: 'تعديل المعاملة',
+    formDescription: 'الوصف',
+    formAmount: 'المبلغ',
+    formType: 'النوع',
+    formCategory: 'الفئة',
+    formDate: 'التاريخ',
+    formNotes: 'ملاحظات',
+    formStatus: 'الحالة',
+    formCancel: 'إلغاء',
+    formSaveCreate: 'إنشاء',
+    formSaveEdit: 'حفظ',
+    errLoad: 'تعذر تحميل المعاملات.',
+    errSave: 'تعذر حفظ المعاملة.',
+    errDelete: 'تعذر حذف المعاملة.',
+    confirmDelete: 'هل تريد حذف هذه المعاملة؟',
   },
 }
 
@@ -146,10 +188,53 @@ const preferences = ref({
   language: 'FR',
 })
 
+const transactions = ref([])
+const categories = ref([])
+const summary = ref({
+  income_total: 0,
+  expense_total: 0,
+  net_balance: 0,
+})
+
+const pagination = ref({
+  current_page: 1,
+  last_page: 1,
+  per_page: 12,
+  total: 0,
+})
+
+const filters = ref({
+  search: '',
+  type: '',
+  period: 'this_month',
+  category_id: '',
+})
+
+const isLoading = ref(false)
+const errorMessage = ref('')
+const isModalOpen = ref(false)
+const isSaving = ref(false)
+const deletingId = ref(null)
+
+const transactionForm = ref({
+  id: null,
+  description: '',
+  amount: '',
+  type: 'expense',
+  status: 'completed',
+  category_id: '',
+  occurred_at: '',
+  notes: '',
+})
+
+const formErrorMessage = ref('')
+
 const currentLanguage = () =>
   SUPPORTED_LANGUAGES.includes(preferences.value.language) ? preferences.value.language : 'FR'
 
 const t = (key) => translations[currentLanguage()]?.[key] ?? translations.FR[key] ?? key
+
+const apiBaseUrl = () => (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')
 
 const getStoredPreferences = () => {
   const raw = localStorage.getItem('user_preferences')
@@ -191,12 +276,354 @@ const formatCurrency = (value) => {
   }).format(Number(value || 0))
 }
 
-const formatSignedAmount = (value) => {
+const formatSignedAmount = (value, type) => {
   const amount = Number(value || 0)
-  const sign = amount >= 0 ? '+' : '-'
+  const sign = type === 'income' ? '+' : '-'
 
   return `${sign}${formatCurrency(Math.abs(amount))}`
 }
+
+const formatDate = (isoDate) => {
+  if (!isoDate) {
+    return '-'
+  }
+
+  const locale = localeByLanguage[preferences.value.language] ?? 'fr-FR'
+
+  return new Intl.DateTimeFormat(locale, {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  }).format(new Date(isoDate))
+}
+
+const statusClass = (status) => {
+  if (status === 'completed') {
+    return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400'
+  }
+
+  return 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300'
+}
+
+const categoryTagStyle = (transaction) => {
+  const color = transaction?.category?.color_hex
+
+  if (!color) {
+    return {}
+  }
+
+  return {
+    borderColor: color,
+    color,
+  }
+}
+
+const isEditing = computed(() => Boolean(transactionForm.value.id))
+
+const firstItemIndex = computed(() => {
+  if (pagination.value.total === 0) {
+    return 0
+  }
+
+  return (pagination.value.current_page - 1) * pagination.value.per_page + 1
+})
+
+const lastItemIndex = computed(() => {
+  if (pagination.value.total === 0) {
+    return 0
+  }
+
+  return Math.min(
+    pagination.value.current_page * pagination.value.per_page,
+    pagination.value.total,
+  )
+})
+
+const dark_light = window.dark_light
+const toggleSidebar = () => {
+  isSidebarCollapsed.value = !isSidebarCollapsed.value
+}
+
+const ensureAuthenticated = async () => {
+  const token = localStorage.getItem('auth_token')
+
+  if (!token) {
+    await router.replace('/login')
+    return null
+  }
+
+  return token
+}
+
+const normalizeTransactionForm = () => {
+  transactionForm.value = {
+    id: null,
+    description: '',
+    amount: '',
+    type: 'expense',
+    status: 'completed',
+    category_id: '',
+    occurred_at: new Date().toISOString().slice(0, 16),
+    notes: '',
+  }
+}
+
+const openCreateModal = () => {
+  formErrorMessage.value = ''
+  normalizeTransactionForm()
+  isModalOpen.value = true
+}
+
+const openEditModal = (transaction) => {
+  formErrorMessage.value = ''
+  transactionForm.value = {
+    id: transaction.id,
+    description: transaction.description ?? '',
+    amount: String(transaction.amount ?? ''),
+    type: transaction.type ?? 'expense',
+    status: transaction.status ?? 'completed',
+    category_id: transaction?.category?.id ?? '',
+    occurred_at: transaction.occurred_at
+      ? new Date(transaction.occurred_at).toISOString().slice(0, 16)
+      : new Date().toISOString().slice(0, 16),
+    notes: transaction.notes ?? '',
+  }
+  isModalOpen.value = true
+}
+
+const closeModal = () => {
+  isModalOpen.value = false
+  formErrorMessage.value = ''
+}
+
+const parseErrorMessage = (data, fallback) => {
+  if (data?.message) {
+    return data.message
+  }
+
+  const firstValidationError = Object.values(data?.errors ?? {})?.[0]?.[0]
+
+  if (typeof firstValidationError === 'string') {
+    return firstValidationError
+  }
+
+  return fallback
+}
+
+const loadTransactions = async () => {
+  errorMessage.value = ''
+  isLoading.value = true
+
+  const token = await ensureAuthenticated()
+
+  if (!token) {
+    isLoading.value = false
+    return
+  }
+
+  const params = new URLSearchParams()
+
+  if (filters.value.search.trim() !== '') {
+    params.set('search', filters.value.search.trim())
+  }
+
+  if (filters.value.type) {
+    params.set('type', filters.value.type)
+  }
+
+  if (filters.value.period) {
+    params.set('period', filters.value.period)
+  }
+
+  if (filters.value.category_id) {
+    params.set('category_id', filters.value.category_id)
+  }
+
+  params.set('page', String(pagination.value.current_page))
+
+  try {
+    const response = await fetch(`${apiBaseUrl()}/api/transactions?${params.toString()}`, {
+      headers: {
+        Accept: 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    })
+
+    const data = await response.json().catch(() => null)
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        localStorage.removeItem('auth_token')
+        localStorage.removeItem('auth_user')
+        await router.replace('/login')
+        return
+      }
+
+      throw new Error(parseErrorMessage(data, t('errLoad')))
+    }
+
+    transactions.value = Array.isArray(data?.transactions) ? data.transactions : []
+    categories.value = Array.isArray(data?.categories) ? data.categories : []
+    summary.value = {
+      income_total: Number(data?.summary?.income_total ?? 0),
+      expense_total: Number(data?.summary?.expense_total ?? 0),
+      net_balance: Number(data?.summary?.net_balance ?? 0),
+    }
+    pagination.value = {
+      current_page: Number(data?.pagination?.current_page ?? 1),
+      last_page: Number(data?.pagination?.last_page ?? 1),
+      per_page: Number(data?.pagination?.per_page ?? 12),
+      total: Number(data?.pagination?.total ?? 0),
+    }
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : t('errLoad')
+  } finally {
+    isLoading.value = false
+  }
+}
+
+const saveTransaction = async () => {
+  formErrorMessage.value = ''
+  isSaving.value = true
+
+  const token = await ensureAuthenticated()
+
+  if (!token) {
+    isSaving.value = false
+    return
+  }
+
+  const payload = {
+    description: transactionForm.value.description,
+    amount: Number(transactionForm.value.amount),
+    type: transactionForm.value.type,
+    status: transactionForm.value.status,
+    category_id: transactionForm.value.category_id ? Number(transactionForm.value.category_id) : null,
+    occurred_at: transactionForm.value.occurred_at,
+    notes: transactionForm.value.notes || null,
+  }
+
+  const endpoint = isEditing.value
+    ? `${apiBaseUrl()}/api/transactions/${transactionForm.value.id}`
+    : `${apiBaseUrl()}/api/transactions`
+  const method = isEditing.value ? 'PUT' : 'POST'
+
+  try {
+    const response = await fetch(endpoint, {
+      method,
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    })
+
+    const data = await response.json().catch(() => null)
+
+    if (!response.ok) {
+      throw new Error(parseErrorMessage(data, t('errSave')))
+    }
+
+    closeModal()
+    await loadTransactions()
+  } catch (error) {
+    formErrorMessage.value = error instanceof Error ? error.message : t('errSave')
+  } finally {
+    isSaving.value = false
+  }
+}
+
+const deleteTransaction = async (transactionId) => {
+  const shouldDelete = window.confirm(t('confirmDelete'))
+
+  if (!shouldDelete) {
+    return
+  }
+
+  deletingId.value = transactionId
+  errorMessage.value = ''
+
+  const token = await ensureAuthenticated()
+
+  if (!token) {
+    deletingId.value = null
+    return
+  }
+
+  try {
+    const response = await fetch(`${apiBaseUrl()}/api/transactions/${transactionId}`, {
+      method: 'DELETE',
+      headers: {
+        Accept: 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    })
+
+    const data = await response.json().catch(() => null)
+
+    if (!response.ok) {
+      throw new Error(parseErrorMessage(data, t('errDelete')))
+    }
+
+    if (transactions.value.length === 1 && pagination.value.current_page > 1) {
+      pagination.value.current_page -= 1
+    }
+
+    await loadTransactions()
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : t('errDelete')
+  } finally {
+    deletingId.value = null
+  }
+}
+
+const setTypeFilter = (type) => {
+  filters.value.type = type
+  pagination.value.current_page = 1
+  loadTransactions()
+}
+
+const setPage = (nextPage) => {
+  if (nextPage < 1 || nextPage > pagination.value.last_page || nextPage === pagination.value.current_page) {
+    return
+  }
+
+  pagination.value.current_page = nextPage
+  loadTransactions()
+}
+
+let searchDebounce = null
+
+watch(
+  () => filters.value.search,
+  () => {
+    pagination.value.current_page = 1
+
+    if (searchDebounce) {
+      clearTimeout(searchDebounce)
+    }
+
+    searchDebounce = setTimeout(() => {
+      loadTransactions()
+    }, 300)
+  },
+)
+
+watch(
+  () => filters.value.category_id,
+  () => {
+    pagination.value.current_page = 1
+    loadTransactions()
+  },
+)
+
+watch(
+  () => filters.value.period,
+  () => {
+    pagination.value.current_page = 1
+    loadTransactions()
+  },
+)
 
 const onPreferencesUpdated = () => {
   applyStoredPreferences()
@@ -204,18 +631,31 @@ const onPreferencesUpdated = () => {
 
 onMounted(() => {
   applyStoredPreferences()
+
+  try {
+    const rawUser = localStorage.getItem('auth_user')
+    authUser.value = rawUser ? JSON.parse(rawUser) : null
+  } catch {
+    authUser.value = null
+  }
+
+  normalizeTransactionForm()
+  loadTransactions()
+
   window.addEventListener('user-preferences-updated', onPreferencesUpdated)
 })
 
 onBeforeUnmount(() => {
+  if (searchDebounce) {
+    clearTimeout(searchDebounce)
+  }
+
   window.removeEventListener('user-preferences-updated', onPreferencesUpdated)
 })
 </script>
 
 <template>
-  <div
-    class="min-h-screen bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100"
-  >
+  <div class="min-h-screen bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100">
     <div class="flex min-h-screen overflow-hidden">
       <aside
         class="hidden lg:flex bg-white dark:bg-[#16222c] border-r border-slate-200 dark:border-slate-800 flex-col transition duration-300"
@@ -224,12 +664,12 @@ onBeforeUnmount(() => {
         <div class="p-6 flex items-center gap-3">
           <div class="size-10 rounded-lg bg-primary flex items-center justify-center text-white">
             <button
-            class="hidden lg:flex size-10 items-center justify-center rounded-lg"
-            type="button"
-            @click="toggleSidebar"
+              class="hidden lg:flex size-10 items-center justify-center rounded-lg"
+              type="button"
+              @click="toggleSidebar"
             >
-            <span class="material-symbols-outlined text-slate-900 dark:text-white">account_balance_wallet</span>
-        </button>
+              <span class="material-symbols-outlined text-slate-900 dark:text-white">account_balance_wallet</span>
+            </button>
           </div>
           <div v-show="!isSidebarCollapsed">
             <h1 class="text-lg font-bold leading-none text-slate-900 dark:text-white">Budgefy</h1>
@@ -268,7 +708,6 @@ onBeforeUnmount(() => {
           </router-link>
         </nav>
 
-
         <div class="p-4 border-t border-slate-200 dark:border-slate-800">
           <div class="p-4 rounded-xl bg-slate-100 dark:bg-slate-800/50 flex items-center gap-3">
             <div class="size-10 rounded-full bg-slate-300 dark:bg-slate-700 overflow-hidden grid place-items-center">
@@ -299,19 +738,16 @@ onBeforeUnmount(() => {
           <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <h2 class="text-xl font-bold text-slate-900 dark:text-white">{{ t('pageTitle') }}</h2>
-              <p class="text-sm text-slate-500 dark:text-slate-400">
-                {{ t('pageSubtitle') }}
-              </p>
+              <p class="text-sm text-slate-500 dark:text-slate-400">{{ t('pageSubtitle') }}</p>
             </div>
 
             <div class="flex flex-col sm:flex-row sm:items-center gap-3">
               <div class="relative w-full md:w-72">
-                <span
-                  class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xl"
-                >
+                <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xl">
                   search
                 </span>
                 <input
+                  v-model="filters.search"
                   class="w-full pl-10 pr-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-primary"
                   :placeholder="t('searchPlaceholder')"
                   type="text"
@@ -330,120 +766,92 @@ onBeforeUnmount(() => {
           </div>
         </header>
 
-        <div class="p-5 md:p-8 space-y-8 flex-1">
+        <div class="p-5 md:p-8 space-y-6 flex-1">
           <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div>
               <h3 class="text-3xl md:text-4xl font-black text-slate-900 dark:text-white tracking-tight">
-                {{ t('overviewTitle') }}
+                {{ t('navTransactions') }}
               </h3>
-              <p class="text-slate-500 dark:text-slate-400 mt-2 text-lg">
-                {{ t('overviewSubtitle') }}
-              </p>
             </div>
             <button
               class="flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-lg shadow-primary/20"
+              type="button"
+              @click="openCreateModal"
             >
               <span class="material-symbols-outlined">add_circle</span>
               <span>{{ t('addTransaction') }}</span>
             </button>
           </div>
 
+          <p v-if="errorMessage" class="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-300">
+            {{ errorMessage }}
+          </p>
+
           <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div class="bg-white dark:bg-[#1a2632] border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-sm">
-              <div class="flex items-center gap-4">
-                <div class="p-3 bg-emerald-500/10 text-emerald-500 rounded-xl">
-                  <span class="material-symbols-outlined">trending_up</span>
-                </div>
-                <div>
-                  <p class="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                    {{ t('totalIncome') }}
-                  </p>
-                  <p class="text-2xl font-bold text-slate-900 dark:text-white">{{ formatCurrency(4250) }}</p>
-                </div>
-              </div>
+              <p class="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ t('totalIncome') }}</p>
+              <p class="text-2xl font-bold text-emerald-500">{{ formatCurrency(summary.income_total) }}</p>
             </div>
 
             <div class="bg-white dark:bg-[#1a2632] border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-sm">
-              <div class="flex items-center gap-4">
-                <div class="p-3 bg-rose-500/10 text-rose-500 rounded-xl">
-                  <span class="material-symbols-outlined">trending_down</span>
-                </div>
-                <div>
-                  <p class="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                    {{ t('totalExpense') }}
-                  </p>
-                  <p class="text-2xl font-bold text-slate-900 dark:text-white">{{ formatCurrency(1840.5) }}</p>
-                </div>
-              </div>
+              <p class="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ t('totalExpense') }}</p>
+              <p class="text-2xl font-bold text-rose-500">{{ formatCurrency(summary.expense_total) }}</p>
             </div>
 
             <div class="bg-white dark:bg-[#1a2632] border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-sm">
-              <div class="flex items-center gap-4">
-                <div class="p-3 bg-primary/10 text-primary rounded-xl">
-                  <span class="material-symbols-outlined">account_balance</span>
-                </div>
-                <div>
-                  <p class="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                    {{ t('netBalance') }}
-                  </p>
-                  <p class="text-2xl font-bold text-slate-900 dark:text-white">{{ formatCurrency(2409.5) }}</p>
-                </div>
-              </div>
+              <p class="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ t('netBalance') }}</p>
+              <p class="text-2xl font-bold text-slate-900 dark:text-white">{{ formatCurrency(summary.net_balance) }}</p>
             </div>
           </div>
 
           <div class="bg-white dark:bg-[#1a2632] border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm">
             <div class="flex flex-col lg:flex-row lg:items-center justify-between p-4 gap-4 border-b border-slate-200 dark:border-slate-800">
               <div class="flex p-1 bg-slate-100 dark:bg-slate-900/50 rounded-lg w-fit">
-                <button class="px-6 py-2 rounded-md text-sm font-bold bg-white dark:bg-slate-800 text-primary shadow-sm transition-all">
+                <button
+                  class="px-4 py-2 rounded-md text-sm font-bold transition-all"
+                  :class="filters.type === '' ? 'bg-white dark:bg-slate-800 text-primary shadow-sm' : 'text-slate-500 dark:text-slate-400'"
+                  type="button"
+                  @click="setTypeFilter('')"
+                >
                   {{ t('all') }}
                 </button>
-                <button class="px-6 py-2 rounded-md text-sm font-bold text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-all">
+                <button
+                  class="px-4 py-2 rounded-md text-sm font-bold transition-all"
+                  :class="filters.type === 'income' ? 'bg-white dark:bg-slate-800 text-primary shadow-sm' : 'text-slate-500 dark:text-slate-400'"
+                  type="button"
+                  @click="setTypeFilter('income')"
+                >
                   {{ t('incomes') }}
                 </button>
-                <button class="px-6 py-2 rounded-md text-sm font-bold text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-all">
+                <button
+                  class="px-4 py-2 rounded-md text-sm font-bold transition-all"
+                  :class="filters.type === 'expense' ? 'bg-white dark:bg-slate-800 text-primary shadow-sm' : 'text-slate-500 dark:text-slate-400'"
+                  type="button"
+                  @click="setTypeFilter('expense')"
+                >
                   {{ t('expenses') }}
                 </button>
               </div>
 
               <div class="flex flex-wrap items-center gap-3">
-                <div class="relative min-w-[200px]">
-                  <span
-                    class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"
-                  >
-                    calendar_month
-                  </span>
-                  <select
-                    class="w-full bg-slate-100 dark:bg-slate-900/50 border-none rounded-lg pl-10 pr-8 py-2 text-sm focus:ring-2 focus:ring-primary appearance-none cursor-pointer text-slate-900 dark:text-white"
-                  >
-                    <option>{{ t('thisMonth') }}</option>
-                    <option>{{ t('lastMonth') }}</option>
-                    <option>{{ t('thisYear') }}</option>
-                    <option>{{ t('custom') }}</option>
-                  </select>
-                </div>
-                <div class="relative min-w-[180px]">
-                  <span
-                    class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"
-                  >
-                    category
-                  </span>
-                  <select
-                    class="w-full bg-slate-100 dark:bg-slate-900/50 border-none rounded-lg pl-10 pr-8 py-2 text-sm focus:ring-2 focus:ring-primary appearance-none cursor-pointer text-slate-900 dark:text-white"
-                  >
-                    <option>{{ t('allCategories') }}</option>
-                    <option>{{ t('categoryFood') }}</option>
-                    <option>{{ t('categoryLeisure') }}</option>
-                    <option>{{ t('categoryHousing') }}</option>
-                    <option>{{ t('categorySalary') }}</option>
-                  </select>
-                </div>
-                <button
-                  class="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                <select
+                  v-model="filters.period"
+                  class="bg-slate-100 dark:bg-slate-900/50 border-none rounded-lg px-4 py-2 text-sm text-slate-900 dark:text-white"
                 >
-                  <span class="material-symbols-outlined text-sm">filter_list</span>
-                  {{ t('moreFilters') }}
-                </button>
+                  <option value="this_month">{{ t('thisMonth') }}</option>
+                  <option value="last_month">{{ t('lastMonth') }}</option>
+                  <option value="this_year">{{ t('thisYear') }}</option>
+                </select>
+
+                <select
+                  v-model="filters.category_id"
+                  class="bg-slate-100 dark:bg-slate-900/50 border-none rounded-lg px-4 py-2 text-sm text-slate-900 dark:text-white"
+                >
+                  <option value="">{{ t('allCategories') }}</option>
+                  <option v-for="category in categories" :key="category.id" :value="String(category.id)">
+                    {{ category.name }}
+                  </option>
+                </select>
               </div>
             </div>
 
@@ -454,107 +862,67 @@ onBeforeUnmount(() => {
                     <th class="px-6 py-4">{{ t('tableDate') }}</th>
                     <th class="px-6 py-4">{{ t('tableCategory') }}</th>
                     <th class="px-6 py-4">{{ t('tableDescription') }}</th>
+                    <th class="px-6 py-4">{{ t('tableStatus') }}</th>
                     <th class="px-6 py-4 text-right">{{ t('tableAmount') }}</th>
                     <th class="px-6 py-4 text-center">{{ t('tableActions') }}</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
-                  <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
-                    <td class="px-6 py-4 text-sm font-medium text-slate-900 dark:text-white">12 Mai 2024</td>
-                    <td class="px-6 py-4">
-                      <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400">
-                        <span class="material-symbols-outlined text-[14px]">payments</span> Salaire
-                      </span>
-                    </td>
-                    <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-300">Salaire Mensuel - Entreprise ABC</td>
-                    <td class="px-6 py-4 text-right font-bold text-emerald-500">{{ formatSignedAmount(3200) }}</td>
-                    <td class="px-6 py-4">
-                      <div class="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button class="p-1.5 hover:bg-primary/10 hover:text-primary rounded text-slate-400 transition-colors">
-                          <span class="material-symbols-outlined text-xl">edit</span>
-                        </button>
-                        <button class="p-1.5 hover:bg-rose-500/10 hover:text-rose-500 rounded text-slate-400 transition-colors">
-                          <span class="material-symbols-outlined text-xl">delete</span>
-                        </button>
-                      </div>
+                  <tr v-if="isLoading">
+                    <td colspan="6" class="px-6 py-8 text-center text-sm text-slate-500 dark:text-slate-400">
+                      {{ t('loading') }}
                     </td>
                   </tr>
-                  <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
-                    <td class="px-6 py-4 text-sm font-medium text-slate-900 dark:text-white">10 Mai 2024</td>
-                    <td class="px-6 py-4">
-                      <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400">
-                        <span class="material-symbols-outlined text-[14px]">restaurant</span> Alimentation
-                      </span>
-                    </td>
-                    <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-300">Courses Supermarché Bio</td>
-                    <td class="px-6 py-4 text-right font-bold text-rose-500">{{ formatSignedAmount(-84.2) }}</td>
-                    <td class="px-6 py-4">
-                      <div class="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button class="p-1.5 hover:bg-primary/10 hover:text-primary rounded text-slate-400 transition-colors">
-                          <span class="material-symbols-outlined text-xl">edit</span>
-                        </button>
-                        <button class="p-1.5 hover:bg-rose-500/10 hover:text-rose-500 rounded text-slate-400 transition-colors">
-                          <span class="material-symbols-outlined text-xl">delete</span>
-                        </button>
-                      </div>
+
+                  <tr v-else-if="transactions.length === 0">
+                    <td colspan="6" class="px-6 py-8 text-center text-sm text-slate-500 dark:text-slate-400">
+                      {{ t('noTransactions') }}
                     </td>
                   </tr>
-                  <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
-                    <td class="px-6 py-4 text-sm font-medium text-slate-900 dark:text-white">08 Mai 2024</td>
+
+                  <tr
+                    v-for="transaction in transactions"
+                    :key="transaction.id"
+                    class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group"
+                  >
+                    <td class="px-6 py-4 text-sm font-medium text-slate-900 dark:text-white">
+                      {{ formatDate(transaction.occurred_at) }}
+                    </td>
                     <td class="px-6 py-4">
-                      <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
-                        <span class="material-symbols-outlined text-[14px]">home</span> Logement
+                      <span
+                        class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold"
+                        :style="categoryTagStyle(transaction)"
+                      >
+                        {{ transaction?.category?.name || '-' }}
                       </span>
                     </td>
-                    <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-300">Loyer - Appartement Centre</td>
-                    <td class="px-6 py-4 text-right font-bold text-rose-500">{{ formatSignedAmount(-950) }}</td>
-                    <td class="px-6 py-4">
-                      <div class="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button class="p-1.5 hover:bg-primary/10 hover:text-primary rounded text-slate-400 transition-colors">
-                          <span class="material-symbols-outlined text-xl">edit</span>
-                        </button>
-                        <button class="p-1.5 hover:bg-rose-500/10 hover:text-rose-500 rounded text-slate-400 transition-colors">
-                          <span class="material-symbols-outlined text-xl">delete</span>
-                        </button>
-                      </div>
+                    <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-300">
+                      {{ transaction.description }}
                     </td>
-                  </tr>
-                  <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
-                    <td class="px-6 py-4 text-sm font-medium text-slate-900 dark:text-white">05 Mai 2024</td>
                     <td class="px-6 py-4">
-                      <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400">
-                        <span class="material-symbols-outlined text-[14px]">movie</span> Loisirs
+                      <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold" :class="statusClass(transaction.status)">
+                        {{ transaction.status === 'completed' ? t('statusCompleted') : t('statusPending') }}
                       </span>
                     </td>
-                    <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-300">Abonnement Netflix &amp; Spotify</td>
-                    <td class="px-6 py-4 text-right font-bold text-rose-500">{{ formatSignedAmount(-25.98) }}</td>
-                    <td class="px-6 py-4">
-                      <div class="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button class="p-1.5 hover:bg-primary/10 hover:text-primary rounded text-slate-400 transition-colors">
-                          <span class="material-symbols-outlined text-xl">edit</span>
-                        </button>
-                        <button class="p-1.5 hover:bg-rose-500/10 hover:text-rose-500 rounded text-slate-400 transition-colors">
-                          <span class="material-symbols-outlined text-xl">delete</span>
-                        </button>
-                      </div>
+                    <td class="px-6 py-4 text-right font-bold" :class="transaction.type === 'income' ? 'text-emerald-500' : 'text-rose-500'">
+                      {{ formatSignedAmount(transaction.amount, transaction.type) }}
                     </td>
-                  </tr>
-                  <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
-                    <td class="px-6 py-4 text-sm font-medium text-slate-900 dark:text-white">02 Mai 2024</td>
                     <td class="px-6 py-4">
-                      <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400">
-                        <span class="material-symbols-outlined text-[14px]">monitoring</span> Dividendes
-                      </span>
-                    </td>
-                    <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-300">Dividendes Portfolio Actions</td>
-                    <td class="px-6 py-4 text-right font-bold text-emerald-500">{{ formatSignedAmount(150.3) }}</td>
-                    <td class="px-6 py-4">
-                      <div class="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button class="p-1.5 hover:bg-primary/10 hover:text-primary rounded text-slate-400 transition-colors">
-                          <span class="material-symbols-outlined text-xl">edit</span>
+                      <div class="flex items-center justify-center gap-2">
+                        <button
+                          class="rounded px-2 py-1 text-xs font-semibold text-primary hover:bg-primary/10"
+                          type="button"
+                          @click="openEditModal(transaction)"
+                        >
+                          {{ t('edit') }}
                         </button>
-                        <button class="p-1.5 hover:bg-rose-500/10 hover:text-rose-500 rounded text-slate-400 transition-colors">
-                          <span class="material-symbols-outlined text-xl">delete</span>
+                        <button
+                          class="rounded px-2 py-1 text-xs font-semibold text-rose-500 hover:bg-rose-500/10 disabled:opacity-60"
+                          type="button"
+                          :disabled="deletingId === transaction.id"
+                          @click="deleteTransaction(transaction.id)"
+                        >
+                          {{ t('delete') }}
                         </button>
                       </div>
                     </td>
@@ -563,26 +931,143 @@ onBeforeUnmount(() => {
               </table>
             </div>
 
-            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 px-6 py-4 bg-slate-50/50 dark:bg-slate-900/40 rounded-2xl border border-slate-200 dark:border-slate-800">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 px-6 py-4 bg-slate-50/50 dark:bg-slate-900/40 border-t border-slate-200 dark:border-slate-800">
               <p class="text-sm text-slate-500 dark:text-slate-400">
-                {{ t('rangeLabel') }} <span class="font-bold text-slate-900 dark:text-white">1-5</span> {{ t('onLabel') }}
-                <span class="font-bold text-slate-900 dark:text-white">42</span> {{ t('transactionsLabel') }}
+                {{ t('rangeLabel') }}
+                <span class="font-bold text-slate-900 dark:text-white">{{ firstItemIndex }}-{{ lastItemIndex }}</span>
+                {{ t('onLabel') }}
+                <span class="font-bold text-slate-900 dark:text-white">{{ pagination.total }}</span>
+                {{ t('transactionsLabel') }}
               </p>
               <div class="flex gap-2">
-                <button class="p-2 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-white dark:hover:bg-slate-800 transition-colors disabled:opacity-50" disabled>
-                  <span class="material-symbols-outlined text-sm">chevron_left</span>
+                <button
+                  class="px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm disabled:opacity-50"
+                  type="button"
+                  :disabled="pagination.current_page <= 1 || isLoading"
+                  @click="setPage(pagination.current_page - 1)"
+                >
+                  {{ t('prev') }}
                 </button>
-                <button class="px-3.5 py-2 text-sm font-bold bg-primary text-white rounded-lg">1</button>
-                <button class="px-3.5 py-2 text-sm font-bold border border-slate-200 dark:border-slate-700 hover:bg-white dark:hover:bg-slate-800 rounded-lg transition-colors">2</button>
-                <button class="px-3.5 py-2 text-sm font-bold border border-slate-200 dark:border-slate-700 hover:bg-white dark:hover:bg-slate-800 rounded-lg transition-colors">3</button>
-                <button class="p-2 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-white dark:hover:bg-slate-800 transition-colors">
-                  <span class="material-symbols-outlined text-sm">chevron_right</span>
+                <button
+                  class="px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm disabled:opacity-50"
+                  type="button"
+                  :disabled="pagination.current_page >= pagination.last_page || isLoading"
+                  @click="setPage(pagination.current_page + 1)"
+                >
+                  {{ t('next') }}
                 </button>
               </div>
             </div>
           </div>
         </div>
       </main>
+    </div>
+
+    <div v-if="isModalOpen" class="fixed inset-0 z-30 grid place-items-center bg-slate-900/50 p-4">
+      <div class="w-full max-w-2xl rounded-2xl border border-slate-200 bg-white p-6 shadow-xl dark:border-slate-700 dark:bg-slate-900">
+        <h4 class="text-xl font-bold text-slate-900 dark:text-white">
+          {{ isEditing ? t('formEditTitle') : t('formCreateTitle') }}
+        </h4>
+
+        <p v-if="formErrorMessage" class="mt-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-300">
+          {{ formErrorMessage }}
+        </p>
+
+        <form class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2" @submit.prevent="saveTransaction">
+          <label class="flex flex-col gap-1 md:col-span-2">
+            <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">{{ t('formDescription') }}</span>
+            <input
+              v-model="transactionForm.description"
+              required
+              class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800"
+              type="text"
+            />
+          </label>
+
+          <label class="flex flex-col gap-1">
+            <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">{{ t('formAmount') }}</span>
+            <input
+              v-model="transactionForm.amount"
+              required
+              min="0.01"
+              step="0.01"
+              class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800"
+              type="number"
+            />
+          </label>
+
+          <label class="flex flex-col gap-1">
+            <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">{{ t('formType') }}</span>
+            <select
+              v-model="transactionForm.type"
+              class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800"
+            >
+              <option value="income">{{ t('incomes') }}</option>
+              <option value="expense">{{ t('expenses') }}</option>
+            </select>
+          </label>
+
+          <label class="flex flex-col gap-1">
+            <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">{{ t('formCategory') }}</span>
+            <select
+              v-model="transactionForm.category_id"
+              class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800"
+            >
+              <option value="">{{ t('allCategories') }}</option>
+              <option v-for="category in categories" :key="category.id" :value="String(category.id)">
+                {{ category.name }}
+              </option>
+            </select>
+          </label>
+
+          <label class="flex flex-col gap-1">
+            <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">{{ t('formStatus') }}</span>
+            <select
+              v-model="transactionForm.status"
+              class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800"
+            >
+              <option value="completed">{{ t('statusCompleted') }}</option>
+              <option value="pending">{{ t('statusPending') }}</option>
+            </select>
+          </label>
+
+          <label class="flex flex-col gap-1 md:col-span-2">
+            <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">{{ t('formDate') }}</span>
+            <input
+              v-model="transactionForm.occurred_at"
+              required
+              class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800"
+              type="datetime-local"
+            />
+          </label>
+
+          <label class="flex flex-col gap-1 md:col-span-2">
+            <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">{{ t('formNotes') }}</span>
+            <textarea
+              v-model="transactionForm.notes"
+              rows="3"
+              class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800"
+            />
+          </label>
+
+          <div class="md:col-span-2 mt-2 flex justify-end gap-3">
+            <button
+              class="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 dark:border-slate-700 dark:text-slate-200"
+              type="button"
+              @click="closeModal"
+            >
+              {{ t('formCancel') }}
+            </button>
+            <button
+              class="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+              type="submit"
+              :disabled="isSaving"
+            >
+              {{ isEditing ? t('formSaveEdit') : t('formSaveCreate') }}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   </div>
 </template>
