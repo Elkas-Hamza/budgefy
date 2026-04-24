@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
@@ -24,21 +24,164 @@ const dashboard = ref({
   recent_transactions: [],
 })
 
-const currencyFormatter = new Intl.NumberFormat('fr-FR', {
-  style: 'currency',
+const SUPPORTED_CURRENCIES = ['EUR', 'USD', 'GBP']
+const SUPPORTED_LANGUAGES = ['FR', 'EN', 'AR']
+const localeByLanguage = {
+  FR: 'fr-FR',
+  EN: 'en-US',
+  AR: 'ar',
+}
+
+const translations = {
+  FR: {
+    navDashboard: 'Tableau de bord',
+    navTransactions: 'Transactions',
+    navCategories: 'Categories',
+    navSettings: 'Parametres',
+    userDefault: 'Utilisateur',
+    accountConnected: 'Compte connecte',
+    pageTitle: 'Apercu financier',
+    searchPlaceholder: 'Rechercher une transaction...',
+    balance: 'Solde Actuel',
+    income: 'Revenu Total',
+    expense: 'Depense Totale',
+    incomeVsExpense: 'Revenus vs Depenses',
+    monthlyComparison: 'Comparaison mensuelle des flux',
+    byCategory: 'Par Categorie',
+    expenseBreakdown: 'Repartition des depenses',
+    noExpenses: 'Aucune depense enregistree pour le moment.',
+    latestTransactions: 'Dernieres Transactions',
+    seeAll: 'Voir tout',
+    tableTransaction: 'Transaction',
+    tableCategory: 'Categorie',
+    tableDate: 'Date',
+    tableStatus: 'Statut',
+    tableAmount: 'Montant',
+    statusCompleted: 'Termine',
+    statusPending: 'En cours',
+    noSearchResults: 'Aucune transaction ne correspond a votre recherche.',
+    footer: '© 2026 Gestion Budgetaire Personnelle. Tous droits reserves.',
+    errLoadDashboard: 'Impossible de charger le tableau de bord.',
+    errUnexpected: 'Une erreur inattendue est survenue pendant le chargement.',
+  },
+  EN: {
+    navDashboard: 'Dashboard',
+    navTransactions: 'Transactions',
+    navCategories: 'Categories',
+    navSettings: 'Settings',
+    userDefault: 'User',
+    accountConnected: 'Signed in account',
+    pageTitle: 'Financial overview',
+    searchPlaceholder: 'Search for a transaction...',
+    balance: 'Current Balance',
+    income: 'Total Income',
+    expense: 'Total Expense',
+    incomeVsExpense: 'Income vs Expense',
+    monthlyComparison: 'Monthly cashflow comparison',
+    byCategory: 'By Category',
+    expenseBreakdown: 'Expense breakdown',
+    noExpenses: 'No expenses recorded yet.',
+    latestTransactions: 'Latest Transactions',
+    seeAll: 'See all',
+    tableTransaction: 'Transaction',
+    tableCategory: 'Category',
+    tableDate: 'Date',
+    tableStatus: 'Status',
+    tableAmount: 'Amount',
+    statusCompleted: 'Completed',
+    statusPending: 'In progress',
+    noSearchResults: 'No transactions match your search.',
+    footer: '© 2026 Personal Budget Management. All rights reserved.',
+    errLoadDashboard: 'Unable to load dashboard.',
+    errUnexpected: 'An unexpected error occurred while loading data.',
+  },
+  AR: {
+    navDashboard: 'لوحة التحكم',
+    navTransactions: 'المعاملات',
+    navCategories: 'الفئات',
+    navSettings: 'الإعدادات',
+    userDefault: 'مستخدم',
+    accountConnected: 'حساب متصل',
+    pageTitle: 'نظرة مالية عامة',
+    searchPlaceholder: 'ابحث عن معاملة...',
+    balance: 'الرصيد الحالي',
+    income: 'إجمالي الدخل',
+    expense: 'إجمالي المصروف',
+    incomeVsExpense: 'الدخل مقابل المصروف',
+    monthlyComparison: 'مقارنة التدفق الشهري',
+    byCategory: 'حسب الفئة',
+    expenseBreakdown: 'توزيع المصروفات',
+    noExpenses: 'لا توجد مصروفات مسجلة حاليا.',
+    latestTransactions: 'اخر المعاملات',
+    seeAll: 'عرض الكل',
+    tableTransaction: 'المعاملة',
+    tableCategory: 'الفئة',
+    tableDate: 'التاريخ',
+    tableStatus: 'الحالة',
+    tableAmount: 'المبلغ',
+    statusCompleted: 'مكتمل',
+    statusPending: 'قيد التنفيذ',
+    noSearchResults: 'لا توجد معاملات مطابقة للبحث.',
+    footer: '© 2026 إدارة الميزانية الشخصية. جميع الحقوق محفوظة.',
+    errLoadDashboard: 'تعذر تحميل لوحة التحكم.',
+    errUnexpected: 'حدث خطأ غير متوقع اثناء التحميل.',
+  },
+}
+
+const preferences = ref({
   currency: 'EUR',
+  language: 'FR',
 })
 
-const dateFormatter = new Intl.DateTimeFormat('fr-FR', {
-  dateStyle: 'medium',
-  timeStyle: 'short',
-})
+const currentLanguage = computed(() =>
+  SUPPORTED_LANGUAGES.includes(preferences.value.language) ? preferences.value.language : 'FR',
+)
+
+const t = (key) => translations[currentLanguage.value]?.[key] ?? translations.FR[key] ?? key
+
+const getStoredPreferences = () => {
+  const raw = localStorage.getItem('user_preferences')
+
+  if (!raw) {
+    return {
+      currency: 'EUR',
+      language: 'FR',
+    }
+  }
+
+  try {
+    const parsed = JSON.parse(raw)
+    const parsedCurrency = String(parsed?.currency ?? '')
+    const parsedLanguage = String(parsed?.language ?? '')
+
+    return {
+      currency: SUPPORTED_CURRENCIES.includes(parsedCurrency) ? parsedCurrency : 'EUR',
+      language: SUPPORTED_LANGUAGES.includes(parsedLanguage) ? parsedLanguage : 'FR',
+    }
+  } catch {
+    return {
+      currency: 'EUR',
+      language: 'FR',
+    }
+  }
+}
+
+const applyLanguageAttributes = () => {
+  const html = document.documentElement
+  html.lang = preferences.value.language === 'AR' ? 'ar' : preferences.value.language.toLowerCase()
+  html.dir = preferences.value.language === 'AR' ? 'rtl' : 'ltr'
+}
+
+const applyStoredPreferences = () => {
+  preferences.value = getStoredPreferences()
+  applyLanguageAttributes()
+}
 
 const summaryCards = computed(() => {
   return [
     {
       key: 'balance',
-      title: 'Solde Actuel',
+      title: t('balance'),
       value: dashboard.value.summary.current_balance,
       icon: 'account_balance_wallet',
       iconClass: 'text-primary bg-primary/10',
@@ -49,7 +192,7 @@ const summaryCards = computed(() => {
     },
     {
       key: 'income',
-      title: 'Revenu Total',
+      title: t('income'),
       value: dashboard.value.summary.income_total,
       icon: 'arrow_downward',
       iconClass: 'text-emerald-500 bg-emerald-500/10',
@@ -57,7 +200,7 @@ const summaryCards = computed(() => {
     },
     {
       key: 'expense',
-      title: 'Depense Totale',
+      title: t('expense'),
       value: dashboard.value.summary.expense_total,
       icon: 'shopping_cart',
       iconClass: 'text-rose-500 bg-rose-500/10',
@@ -116,7 +259,12 @@ const monthlyDelta = computed(() => {
 })
 
 const formatCurrency = (value) => {
-  return currencyFormatter.format(Number(value || 0))
+  const locale = localeByLanguage[preferences.value.language] ?? 'fr-FR'
+
+  return new Intl.NumberFormat(locale, {
+    style: 'currency',
+    currency: preferences.value.currency,
+  }).format(Number(value || 0))
 }
 
 const formatDate = (value) => {
@@ -124,7 +272,12 @@ const formatDate = (value) => {
     return '-'
   }
 
-  return dateFormatter.format(new Date(value))
+  const locale = localeByLanguage[preferences.value.language] ?? 'fr-FR'
+
+  return new Intl.DateTimeFormat(locale, {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  }).format(new Date(value))
 }
 
 const trendHeightStyle = (value) => {
@@ -135,7 +288,7 @@ const trendHeightStyle = (value) => {
 }
 
 const statusLabel = (status) => {
-  return status === 'completed' ? 'Termine' : 'En cours'
+  return status === 'completed' ? t('statusCompleted') : t('statusPending')
 }
 
 const statusClass = (status) => {
@@ -196,7 +349,7 @@ const loadDashboard = async () => {
         return
       }
 
-      throw new Error(data?.message ?? 'Impossible de charger le tableau de bord.')
+      throw new Error(data?.message ?? t('errLoadDashboard'))
     }
 
     dashboard.value = {
@@ -220,7 +373,7 @@ const loadDashboard = async () => {
     errorMessage.value =
       error instanceof Error
         ? error.message
-        : 'Une erreur inattendue est survenue pendant le chargement.'
+        : t('errUnexpected')
   } finally {
     isLoading.value = false
   }
@@ -231,7 +384,13 @@ const toggleSidebar = () => {
   isSidebarCollapsed.value = !isSidebarCollapsed.value
 }
 
+const onPreferencesUpdated = () => {
+  applyStoredPreferences()
+}
+
 onMounted(() => {
+  applyStoredPreferences()
+
   const rawUser = localStorage.getItem('auth_user')
 
   if (rawUser) {
@@ -243,6 +402,11 @@ onMounted(() => {
   }
 
   loadDashboard()
+  window.addEventListener('user-preferences-updated', onPreferencesUpdated)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('user-preferences-updated', onPreferencesUpdated)
 })
 </script>
 
@@ -278,7 +442,7 @@ onMounted(() => {
             to="/dashboard"
           >
             <span class="material-symbols-outlined text-[22px]">dashboard</span>
-            <span v-show="!isSidebarCollapsed" class="text-sm">Tableau de bord</span>
+            <span v-show="!isSidebarCollapsed" class="text-sm">{{ t('navDashboard') }}</span>
           </router-link>
           <router-link
             class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
@@ -286,7 +450,7 @@ onMounted(() => {
             to="/transactions"
           >
             <span class="material-symbols-outlined text-[22px]">receipt_long</span>
-            <span v-show="!isSidebarCollapsed" class="text-sm">Transactions</span>
+            <span v-show="!isSidebarCollapsed" class="text-sm">{{ t('navTransactions') }}</span>
           </router-link>
           <router-link
             class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
@@ -294,7 +458,7 @@ onMounted(() => {
             to="/categories"
           >
             <span class="material-symbols-outlined text-[22px]">label</span>
-            <span v-show="!isSidebarCollapsed" class="text-sm">Categories</span>
+            <span v-show="!isSidebarCollapsed" class="text-sm">{{ t('navCategories') }}</span>
           </router-link>
           <router-link
             class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
@@ -302,7 +466,7 @@ onMounted(() => {
             to="/settings"
           >
             <span class="material-symbols-outlined text-[22px]">settings</span>
-            <span v-show="!isSidebarCollapsed" class="text-sm">Parametres</span>
+            <span v-show="!isSidebarCollapsed" class="text-sm">{{ t('navSettings') }}</span>
           </router-link>
         </nav>
         <div class="p-8 border-t border-slate-200 dark:border-slate-800 mt-auto flex items-center ">
@@ -314,12 +478,18 @@ onMounted(() => {
             
           >
             <div class="size-10 rounded-full bg-slate-300 dark:bg-slate-700 overflow-hidden grid place-items-center">
-              <span class="material-symbols-outlined text-slate-600 dark:text-slate-200">person</span>
+              <img
+                v-if="authUser?.image"
+                :src="authUser.image"
+                alt="Avatar utilisateur"
+                class="h-full w-full object-cover"
+              />
+              <span v-else class="material-symbols-outlined text-slate-600 dark:text-slate-200">person</span>
             </div>
             <div v-show="!isSidebarCollapsed" class="flex-1 min-w-0">
-              <p class="text-sm font-semibold truncate text-slate-900 dark:text-white">{{ authUser?.name || 'Utilisateur' }}</p>
+              <p class="text-sm font-semibold truncate text-slate-900 dark:text-white">{{ authUser?.name || t('userDefault') }}</p>
               <p class="text-xs text-slate-500 dark:text-slate-400 truncate">
-                {{ authUser?.email || 'Compte connecte' }}
+                {{ authUser?.email || t('accountConnected') }}
               </p>
             </div>
           </div>
@@ -332,7 +502,7 @@ onMounted(() => {
         >
           <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <h2 class="text-xl font-bold text-slate-900 dark:text-white">Apercu financier</h2>
+              <h2 class="text-xl font-bold text-slate-900 dark:text-white">{{ t('pageTitle') }}</h2>
               <p class="text-sm text-slate-500 dark:text-slate-400">{{ dashboard.period.label }}</p>
             </div>
 
@@ -347,7 +517,7 @@ onMounted(() => {
                 <input
                   v-model="searchTerm"
                   class="w-full pl-10 pr-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-primary"
-                  placeholder="Rechercher une transaction..."
+                  :placeholder="t('searchPlaceholder')"
                   type="text"
                 />
               </div>
@@ -407,8 +577,8 @@ onMounted(() => {
               <div class="lg:col-span-2 bg-white dark:bg-[#1a2632] p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
                 <div class="flex justify-between items-center mb-8">
                   <div>
-                    <h4 class="font-bold text-lg text-slate-900 dark:text-white">Revenus vs Depenses</h4>
-                    <p class="text-xs text-slate-500">Comparaison mensuelle des flux</p>
+                    <h4 class="font-bold text-lg text-slate-900 dark:text-white">{{ t('incomeVsExpense') }}</h4>
+                    <p class="text-xs text-slate-500">{{ t('monthlyComparison') }}</p>
                   </div>
                 </div>
 
@@ -428,8 +598,8 @@ onMounted(() => {
               </div>
 
               <div class="bg-white dark:bg-[#1a2632] p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col">
-                <h4 class="font-bold text-lg mb-1 text-slate-900 dark:text-white">Par Categorie</h4>
-                <p class="text-xs text-slate-500 mb-4">Repartition des depenses</p>
+                <h4 class="font-bold text-lg mb-1 text-slate-900 dark:text-white">{{ t('byCategory') }}</h4>
+                <p class="text-xs text-slate-500 mb-4">{{ t('expenseBreakdown') }}</p>
 
                 <p class="text-2xl font-black mb-6 text-slate-900 dark:text-white">{{ formatCurrency(categoryTotal) }}</p>
 
@@ -452,7 +622,7 @@ onMounted(() => {
                     v-if="dashboard.category_breakdown.length === 0"
                     class="text-sm text-slate-500 dark:text-slate-400"
                   >
-                    Aucune depense enregistree pour le moment.
+                    {{ t('noExpenses') }}
                   </p>
                 </div>
               </div>
@@ -460,9 +630,9 @@ onMounted(() => {
 
             <div class="bg-white dark:bg-[#1a2632] rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
               <div class="p-6 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
-                <h4 class="font-bold text-lg text-slate-900 dark:text-white">Dernieres Transactions</h4>
+                <h4 class="font-bold text-lg text-slate-900 dark:text-white">{{ t('latestTransactions') }}</h4>
                 <router-link class="text-primary text-sm font-semibold hover:underline" to="/transactions">
-                  Voir tout
+                  {{ t('seeAll') }}
                 </router-link>
               </div>
 
@@ -470,11 +640,11 @@ onMounted(() => {
                 <table class="w-full text-left min-w-[760px]">
                   <thead class="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 font-bold">
                     <tr>
-                      <th class="px-6 py-4">Transaction</th>
-                      <th class="px-6 py-4">Categorie</th>
-                      <th class="px-6 py-4">Date</th>
-                      <th class="px-6 py-4">Statut</th>
-                      <th class="px-6 py-4 text-right">Montant</th>
+                      <th class="px-6 py-4">{{ t('tableTransaction') }}</th>
+                      <th class="px-6 py-4">{{ t('tableCategory') }}</th>
+                      <th class="px-6 py-4">{{ t('tableDate') }}</th>
+                      <th class="px-6 py-4">{{ t('tableStatus') }}</th>
+                      <th class="px-6 py-4 text-right">{{ t('tableAmount') }}</th>
                     </tr>
                   </thead>
                   <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
@@ -507,7 +677,7 @@ onMounted(() => {
                     </tr>
                     <tr v-if="filteredTransactions.length === 0">
                       <td class="px-6 py-6 text-sm text-slate-500" colspan="5">
-                        Aucune transaction ne correspond a votre recherche.
+                        {{ t('noSearchResults') }}
                       </td>
                     </tr>
                   </tbody>
@@ -518,10 +688,9 @@ onMounted(() => {
         </div>
 
         <footer class="px-8 py-6 border-t border-slate-200 dark:border-slate-800 text-center text-slate-500 dark:text-slate-400 text-sm">
-          <p>© 2026 Gestion Budgetaire Personnelle. Tous droits reserves.</p>
+          <p>{{ t('footer') }}</p>
         </footer>
       </main>
     </div>
   </div>
 </template>
->>>>>>> ee9332d (feat: Implement dashboard functionality with categories and transactions)
