@@ -82,7 +82,13 @@ onMounted(() => {
             class="p-4 rounded-xl bg-slate-100 dark:bg-slate-800/50 flex items-center gap-3"
           >
             <div class="size-10 rounded-full bg-slate-300 dark:bg-slate-700 overflow-hidden grid place-items-center">
-              <span class="material-symbols-outlined text-slate-600 dark:text-slate-200">person</span>
+              <img
+                v-if="authUser?.image"
+                :src="authUser.image"
+                alt="Avatar utilisateur"
+                class="h-full w-full object-cover"
+              />
+              <span v-else class="material-symbols-outlined text-slate-600 dark:text-slate-200">person</span>
             </div>
             <div v-show="!isSidebarCollapsed" class="flex-1 min-w-0">
               <p class="text-sm font-semibold truncate text-slate-900 dark:text-white">{{ authUser?.name || 'Utilisateur' }}</p>

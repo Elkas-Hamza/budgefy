@@ -11,6 +11,10 @@ Route::prefix('auth')->group(function (): void {
     Route::post('/logout', [AuthController::class, 'logout']);
 });
 
+Route::middleware('api.token')->prefix('auth')->group(function (): void {
+    Route::post('/profile', [AuthController::class, 'updateProfile']);
+});
+
 Route::middleware('api.token')->prefix('dashboard')->group(function (): void {
     Route::get('/overview', [DashboardController::class, 'overview']);
 });

@@ -16,6 +16,8 @@ const form = reactive({
   remember: true,
 });
 
+const registerImageFile = ref(null);
+
 const submitLabel = computed(() => {
   return mode.value === "login" ? "Se connecter" : "Creer un compte";
 });
@@ -57,26 +59,35 @@ const submitAuth = async () => {
   );
   const endpointUrl = `${apiBaseUrl}${submitEndpoint.value}`;
 
-  const payload = {
-    email: form.email,
-    password: form.password,
-  };
-
-  if (mode.value === "register") {
-    payload.name = form.name;
-  } else {
-    payload.remember = form.remember;
-  }
-
   try {
-    const response = await fetch(endpointUrl, {
+    const requestInit = {
       method: "POST",
       headers: {
         Accept: "application/json",
-        "Content-Type": "application/json",
       },
-      body: JSON.stringify(payload),
-    });
+    };
+
+    if (mode.value === "register") {
+      const body = new FormData();
+      body.append("name", form.name);
+      body.append("email", form.email);
+      body.append("password", form.password);
+
+      if (registerImageFile.value) {
+        body.append("image", registerImageFile.value);
+      }
+
+      requestInit.body = body;
+    } else {
+      requestInit.headers["Content-Type"] = "application/json";
+      requestInit.body = JSON.stringify({
+        email: form.email,
+        password: form.password,
+        remember: form.remember,
+      });
+    }
+
+    const response = await fetch(endpointUrl, requestInit);
 
     const data = await response.json().catch(() => null);
 
@@ -108,6 +119,10 @@ const submitAuth = async () => {
 
 const socialNotImplemented = () => {
   errorMessage.value = "Connexion sociale non implementee pour le moment.";
+};
+
+const onRegisterImageChange = (event) => {
+  registerImageFile.value = event?.target?.files?.[0] ?? null;
 };
 
 const dark_light = window.dark_light;
@@ -276,6 +291,28 @@ const dark_light = window.dark_light;
                   type="text"
                 />
               </div>
+            </div>
+
+            <div v-if="mode === 'register'">
+              <label
+                class="block mb-2 text-sm font-medium text-slate-900 dark:text-slate-200"
+                >Photo de profil</label
+              >
+              <div class="relative">
+                <span
+                  class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                  >image</span
+                >
+                <input
+                  class="w-full pl-12 pr-4 py-3.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none text-slate-900 dark:text-white transition-all"
+                  type="file"
+                  accept="image/png,image/jpeg,image/jpg,image/webp"
+                  @change="onRegisterImageChange"
+                />
+              </div>
+              <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">
+                Optionnel. Formats acceptes: PNG, JPG, JPEG, WEBP. Taille max: 4MB.
+              </p>
             </div>
 
             <div>

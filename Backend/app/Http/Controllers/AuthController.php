@@ -8,7 +8,9 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
@@ -18,12 +20,21 @@ class AuthController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
+            'image' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
             'password' => ['required', 'string', 'min:8'],
         ]);
+
+        $imageUrl = null;
+
+        if ($request->hasFile('image')) {
+            $imagePath = $request->file('image')->store('avatars', 'public');
+            $imageUrl = Storage::disk('public')->url($imagePath);
+        }
 
         $user = User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
+            'image' => $imageUrl,
             'password' => $validated['password'],
         ]);
 
@@ -91,6 +102,51 @@ class AuthController extends Controller
         ]);
     }
 
+    public function updateProfile(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $validated = $request->validate([
+            'name' => ['sometimes', 'required', 'string', 'max:255'],
+            'email' => [
+                'sometimes',
+                'required',
+                'string',
+                'email',
+                'max:255',
+                Rule::unique('users', 'email')->ignore($user->id),
+            ],
+            'image' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
+            'remove_image' => ['nullable', 'boolean'],
+        ]);
+
+        if (array_key_exists('name', $validated)) {
+            $user->name = $validated['name'];
+        }
+
+        if (array_key_exists('email', $validated)) {
+            $user->email = $validated['email'];
+        }
+
+        if (($validated['remove_image'] ?? false) === true) {
+            $this->deleteStoredAvatarIfPossible($user->image);
+            $user->image = null;
+        }
+
+        if ($request->hasFile('image')) {
+            $this->deleteStoredAvatarIfPossible($user->image);
+            $imagePath = $request->file('image')->store('avatars', 'public');
+            $user->image = Storage::disk('public')->url($imagePath);
+        }
+
+        $user->save();
+
+        return response()->json([
+            'message' => 'Profil mis a jour.',
+            'user' => $user,
+        ]);
+    }
+
     private function issueToken(int $userId): string
     {
         $token = Str::random(80);
@@ -114,5 +170,20 @@ class AuthController extends Controller
     private function tokenCacheKey(string $token): string
     {
         return 'auth_token:'.$token;
+    }
+
+    private function deleteStoredAvatarIfPossible(?string $image): void
+    {
+        if (! $image) {
+            return;
+        }
+
+        $path = parse_url($image, PHP_URL_PATH);
+
+        if (! is_string($path) || ! str_starts_with($path, '/storage/')) {
+            return;
+        }
+
+        Storage::disk('public')->delete(substr($path, strlen('/storage/')));
     }
 }
