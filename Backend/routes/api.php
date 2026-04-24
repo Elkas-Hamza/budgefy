@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\TransactionController;
 use Illuminate\Support\Facades\Route;
@@ -25,4 +26,11 @@ Route::middleware('api.token')->prefix('transactions')->group(function (): void 
     Route::post('/', [TransactionController::class, 'store']);
     Route::put('/{transaction}', [TransactionController::class, 'update']);
     Route::delete('/{transaction}', [TransactionController::class, 'destroy']);
+});
+
+Route::middleware('api.token')->prefix('categories')->group(function (): void {
+    Route::get('/', [CategoryController::class, 'index']);
+    Route::post('/', [CategoryController::class, 'store']);
+    Route::put('/{category}', [CategoryController::class, 'update']);
+    Route::delete('/{category}', [CategoryController::class, 'destroy']);
 });

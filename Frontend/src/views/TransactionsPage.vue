@@ -845,7 +845,7 @@ onBeforeUnmount(() => {
 
                 <select
                   v-model="filters.category_id"
-                  class="bg-slate-100 dark:bg-slate-900/50 border-none rounded-lg px-4 py-2 text-sm text-slate-900 dark:text-white"
+                  class="bg-slate-100 dark:bg-slate-900/50 border-none  rounded-lg px-4 py-2 text-sm text-slate-900 dark:text-white"
                 >
                   <option value="">{{ t('allCategories') }}</option>
                   <option v-for="category in categories" :key="category.id" :value="String(category.id)">
@@ -941,7 +941,7 @@ onBeforeUnmount(() => {
               </p>
               <div class="flex gap-2">
                 <button
-                  class="px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm disabled:opacity-50"
+                  class="px-3 py-2 border border-slate-200 dark:border-slate-700 dark:text-white rounded-lg text-sm disabled:opacity-50"
                   type="button"
                   :disabled="pagination.current_page <= 1 || isLoading"
                   @click="setPage(pagination.current_page - 1)"
@@ -949,7 +949,7 @@ onBeforeUnmount(() => {
                   {{ t('prev') }}
                 </button>
                 <button
-                  class="px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm disabled:opacity-50"
+                  class="px-3 py-2 border border-slate-200 dark:border-slate-700 dark:text-white rounded-lg text-sm disabled:opacity-50"
                   type="button"
                   :disabled="pagination.current_page >= pagination.last_page || isLoading"
                   @click="setPage(pagination.current_page + 1)"
@@ -979,7 +979,7 @@ onBeforeUnmount(() => {
             <input
               v-model="transactionForm.description"
               required
-              class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800"
+              class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:text-white dark:bg-slate-800"
               type="text"
             />
           </label>
@@ -991,7 +991,7 @@ onBeforeUnmount(() => {
               required
               min="0.01"
               step="0.01"
-              class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800"
+              class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm dark:text-white dark:border-slate-700 dark:bg-slate-800"
               type="number"
             />
           </label>
@@ -1000,7 +1000,7 @@ onBeforeUnmount(() => {
             <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">{{ t('formType') }}</span>
             <select
               v-model="transactionForm.type"
-              class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800"
+              class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm dark:text-white dark:border-slate-700 dark:bg-slate-800"
             >
               <option value="income">{{ t('incomes') }}</option>
               <option value="expense">{{ t('expenses') }}</option>
@@ -1011,7 +1011,7 @@ onBeforeUnmount(() => {
             <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">{{ t('formCategory') }}</span>
             <select
               v-model="transactionForm.category_id"
-              class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800"
+              class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm dark:text-white dark:border-slate-700 dark:bg-slate-800"
             >
               <option value="">{{ t('allCategories') }}</option>
               <option v-for="category in categories" :key="category.id" :value="String(category.id)">
@@ -1024,7 +1024,7 @@ onBeforeUnmount(() => {
             <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">{{ t('formStatus') }}</span>
             <select
               v-model="transactionForm.status"
-              class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800"
+              class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm dark:text-white dark:border-slate-700 dark:bg-slate-800"
             >
               <option value="completed">{{ t('statusCompleted') }}</option>
               <option value="pending">{{ t('statusPending') }}</option>
@@ -1036,7 +1036,7 @@ onBeforeUnmount(() => {
             <input
               v-model="transactionForm.occurred_at"
               required
-              class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800"
+              class="rounded-lg border border-slate-200 bg-white px-3 py-2 dark:text-white text-sm dark:border-slate-700 dark:bg-slate-800"
               type="datetime-local"
             />
           </label>
@@ -1046,7 +1046,7 @@ onBeforeUnmount(() => {
             <textarea
               v-model="transactionForm.notes"
               rows="3"
-              class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800"
+              class="rounded-lg border border-slate-200 bg-white px-3 py-2 dark:text-white text-sm dark:border-slate-700 dark:bg-slate-800"
             />
           </label>
 
