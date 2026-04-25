@@ -39,6 +39,7 @@ class CategoryApiTest extends TestCase
                     'id',
                     'name',
                     'color_hex',
+                    'icon',
                     'transactions_count',
                 ],
             ],
@@ -47,20 +48,24 @@ class CategoryApiTest extends TestCase
         $createResponse = $this->postJson('/api/categories', [
             'name' => 'Travel',
             'color_hex' => '#112233',
+            'icon' => 'travel',
         ], $headers);
 
         $createResponse->assertCreated();
         $createResponse->assertJsonPath('category.name', 'Travel');
+        $createResponse->assertJsonPath('category.icon', 'travel');
 
         $categoryId = $createResponse->json('category.id');
 
         $updateResponse = $this->putJson('/api/categories/'.$categoryId, [
             'name' => 'Travel Updated',
             'color_hex' => '#445566',
+            'icon' => 'movie',
         ], $headers);
 
         $updateResponse->assertOk();
         $updateResponse->assertJsonPath('category.name', 'Travel Updated');
+        $updateResponse->assertJsonPath('category.icon', 'movie');
 
         $deleteResponse = $this->deleteJson('/api/categories/'.$categoryId, [], $headers);
 

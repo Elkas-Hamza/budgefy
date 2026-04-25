@@ -70,8 +70,27 @@ class DashboardController extends Controller
                 'label' => Str::ucfirst($monthStart->locale('fr_FR')->translatedFormat('M')),
                 'income' => round((float) $monthTransactions->where('type', 'income')->sum('amount'), 2),
                 'expense' => round((float) $monthTransactions->where('type', 'expense')->sum('amount'), 2),
+                'income_segments' => $this->buildTrendSegments($monthTransactions, 'income'),
+                'expense_segments' => $this->buildTrendSegments($monthTransactions, 'expense'),
             ];
         })->values()->all();
+    }
+
+    private function buildTrendSegments(Collection $monthTransactions, string $type): array
+    {
+        return $monthTransactions
+            ->where('type', $type)
+            ->groupBy(static fn (Transaction $transaction): string => $transaction->category?->name ?? 'Autres')
+            ->map(function (Collection $group, string $categoryName): array {
+                return [
+                    'category' => $categoryName,
+                    'amount' => round((float) $group->sum('amount'), 2),
+                ];
+            })
+            ->filter(static fn (array $segment): bool => $segment['amount'] > 0)
+            ->sortByDesc('amount')
+            ->values()
+            ->all();
     }
 
     private function buildCategoryBreakdown(Collection $transactions): array
@@ -87,13 +106,20 @@ class DashboardController extends Controller
         }
 
         return $expenseTransactions
-            ->groupBy(static fn (Transaction $transaction): string => $transaction->category?->name ?? 'Autres')
-            ->map(function (Collection $group, string $name) use ($totalExpense): array {
+            ->groupBy(static function (Transaction $transaction): string {
+                if ($transaction->category?->id) {
+                    return 'id:'.$transaction->category->id;
+                }
+
+                return 'name:'.($transaction->category?->name ?? 'Autres');
+            })
+            ->map(function (Collection $group) use ($totalExpense): array {
                 $first = $group->first();
                 $amount = (float) $group->sum('amount');
 
                 return [
-                    'name' => $name,
+                    'category_id' => $first?->category?->id,
+                    'name' => $first?->category?->name ?? 'Autres',
                     'amount' => round($amount, 2),
                     'share_percentage' => round(($amount / $totalExpense) * 100, 2),
                     'color_hex' => $first?->category?->color_hex ?? '#94a3b8',

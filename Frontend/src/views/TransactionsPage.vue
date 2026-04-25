@@ -1,8 +1,13 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
+import { useToast } from '../composables/useToast'
+import { useConfirm } from '../composables/useConfirm'
 
 const router = useRouter()
+const route = useRoute()
+const { showToast } = useToast()
+const { confirm } = useConfirm()
 
 const isSidebarCollapsed = ref(false)
 const authUser = ref(null)
@@ -36,6 +41,7 @@ const translations = {
     thisMonth: 'Ce mois-ci',
     lastMonth: 'Mois dernier',
     thisYear: 'Cette annee',
+    allTime: 'Toute periode',
     allCategories: 'Toutes categories',
     tableDate: 'Date',
     tableCategory: 'Categorie',
@@ -66,6 +72,9 @@ const translations = {
     formCancel: 'Annuler',
     formSaveCreate: 'Creer',
     formSaveEdit: 'Enregistrer',
+    saveCreateSuccess: 'Transaction creee avec succes.',
+    saveEditSuccess: 'Transaction mise a jour avec succes.',
+    deleteSuccess: 'Transaction supprimee avec succes.',
     errLoad: 'Impossible de charger les transactions.',
     errSave: 'Impossible d enregistrer la transaction.',
     errDelete: 'Impossible de supprimer la transaction.',
@@ -91,6 +100,7 @@ const translations = {
     thisMonth: 'This month',
     lastMonth: 'Last month',
     thisYear: 'This year',
+    allTime: 'All time',
     allCategories: 'All categories',
     tableDate: 'Date',
     tableCategory: 'Category',
@@ -121,6 +131,9 @@ const translations = {
     formCancel: 'Cancel',
     formSaveCreate: 'Create',
     formSaveEdit: 'Save',
+    saveCreateSuccess: 'Transaction created successfully.',
+    saveEditSuccess: 'Transaction updated successfully.',
+    deleteSuccess: 'Transaction deleted successfully.',
     errLoad: 'Could not load transactions.',
     errSave: 'Could not save transaction.',
     errDelete: 'Could not delete transaction.',
@@ -146,6 +159,7 @@ const translations = {
     thisMonth: 'هذا الشهر',
     lastMonth: 'الشهر الماضي',
     thisYear: 'هذه السنة',
+    allTime: 'كل الفترات',
     allCategories: 'كل الفئات',
     tableDate: 'التاريخ',
     tableCategory: 'الفئة',
@@ -176,6 +190,9 @@ const translations = {
     formCancel: 'إلغاء',
     formSaveCreate: 'إنشاء',
     formSaveEdit: 'حفظ',
+    saveCreateSuccess: 'تم إنشاء المعاملة بنجاح.',
+    saveEditSuccess: 'تم تحديث المعاملة بنجاح.',
+    deleteSuccess: 'تم حذف المعاملة بنجاح.',
     errLoad: 'تعذر تحميل المعاملات.',
     errSave: 'تعذر حفظ المعاملة.',
     errDelete: 'تعذر حذف المعاملة.',
@@ -195,6 +212,11 @@ const summary = ref({
   expense_total: 0,
   net_balance: 0,
 })
+const totalSummary = ref({
+  income_total: 0,
+  expense_total: 0,
+  net_balance: 0,
+})
 
 const pagination = ref({
   current_page: 1,
@@ -209,6 +231,7 @@ const filters = ref({
   period: 'this_month',
   category_id: '',
 })
+const isApplyingRouteFilters = ref(false)
 
 const isLoading = ref(false)
 const errorMessage = ref('')
@@ -367,6 +390,30 @@ const normalizeTransactionForm = () => {
   }
 }
 
+const applyRouteFiltersFromQuery = () => {
+  const query = route.query
+  const allowedTypes = ['', 'income', 'expense']
+  const allowedPeriods = ['this_month', 'last_month', 'this_year', 'all']
+
+  const nextSearch = typeof query.search === 'string' ? query.search : ''
+  const nextType = typeof query.type === 'string' && allowedTypes.includes(query.type)
+    ? query.type
+    : ''
+  const nextPeriod = typeof query.period === 'string' && allowedPeriods.includes(query.period)
+    ? query.period
+    : 'this_month'
+  const nextCategoryId = typeof query.category_id === 'string' && query.category_id.trim() !== ''
+    ? query.category_id
+    : ''
+
+  isApplyingRouteFilters.value = true
+  filters.value.search = nextSearch
+  filters.value.type = nextType
+  filters.value.period = nextPeriod
+  filters.value.category_id = nextCategoryId
+  isApplyingRouteFilters.value = false
+}
+
 const openCreateModal = () => {
   formErrorMessage.value = ''
   normalizeTransactionForm()
@@ -481,7 +528,50 @@ const loadTransactions = async () => {
   }
 }
 
+const loadTotalSummary = async () => {
+  const token = await ensureAuthenticated()
+
+  if (!token) {
+    return
+  }
+
+  const params = new URLSearchParams()
+  params.set('period', 'all')
+  params.set('page', '1')
+
+  try {
+    const response = await fetch(`${apiBaseUrl()}/api/transactions?${params.toString()}`, {
+      headers: {
+        Accept: 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    })
+
+    const data = await response.json().catch(() => null)
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        localStorage.removeItem('auth_token')
+        localStorage.removeItem('auth_user')
+        await router.replace('/login')
+        return
+      }
+
+      throw new Error(parseErrorMessage(data, t('errLoad')))
+    }
+
+    totalSummary.value = {
+      income_total: Number(data?.summary?.income_total ?? 0),
+      expense_total: Number(data?.summary?.expense_total ?? 0),
+      net_balance: Number(data?.summary?.net_balance ?? 0),
+    }
+  } catch {
+    // Keep existing totals if this request fails.
+  }
+}
+
 const saveTransaction = async () => {
+  const wasEditing = isEditing.value
   formErrorMessage.value = ''
   isSaving.value = true
 
@@ -526,15 +616,25 @@ const saveTransaction = async () => {
 
     closeModal()
     await loadTransactions()
+    await loadTotalSummary()
+    showToast(t(wasEditing ? 'saveEditSuccess' : 'saveCreateSuccess'))
   } catch (error) {
-    formErrorMessage.value = error instanceof Error ? error.message : t('errSave')
+    const message = error instanceof Error ? error.message : t('errSave')
+    formErrorMessage.value = message
+    showToast(message, 'error')
   } finally {
     isSaving.value = false
   }
 }
 
 const deleteTransaction = async (transactionId) => {
-  const shouldDelete = window.confirm(t('confirmDelete'))
+  const shouldDelete = await confirm({
+    title: t('delete'),
+    message: t('confirmDelete'),
+    confirmLabel: t('delete'),
+    cancelLabel: t('formCancel'),
+    type: 'danger',
+  })
 
   if (!shouldDelete) {
     return
@@ -570,8 +670,12 @@ const deleteTransaction = async (transactionId) => {
     }
 
     await loadTransactions()
+    await loadTotalSummary()
+    showToast(t('deleteSuccess'))
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : t('errDelete')
+    const message = error instanceof Error ? error.message : t('errDelete')
+    errorMessage.value = message
+    showToast(message, 'error')
   } finally {
     deletingId.value = null
   }
@@ -597,6 +701,10 @@ let searchDebounce = null
 watch(
   () => filters.value.search,
   () => {
+    if (isApplyingRouteFilters.value) {
+      return
+    }
+
     pagination.value.current_page = 1
 
     if (searchDebounce) {
@@ -612,6 +720,10 @@ watch(
 watch(
   () => filters.value.category_id,
   () => {
+    if (isApplyingRouteFilters.value) {
+      return
+    }
+
     pagination.value.current_page = 1
     loadTransactions()
   },
@@ -620,6 +732,19 @@ watch(
 watch(
   () => filters.value.period,
   () => {
+    if (isApplyingRouteFilters.value) {
+      return
+    }
+
+    pagination.value.current_page = 1
+    loadTransactions()
+  },
+)
+
+watch(
+  () => route.query,
+  () => {
+    applyRouteFiltersFromQuery()
     pagination.value.current_page = 1
     loadTransactions()
   },
@@ -640,7 +765,9 @@ onMounted(() => {
   }
 
   normalizeTransactionForm()
+  applyRouteFiltersFromQuery()
   loadTransactions()
+  loadTotalSummary()
 
   window.addEventListener('user-preferences-updated', onPreferencesUpdated)
 })
@@ -790,17 +917,17 @@ onBeforeUnmount(() => {
           <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div class="bg-white dark:bg-[#1a2632] border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-sm">
               <p class="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ t('totalIncome') }}</p>
-              <p class="text-2xl font-bold text-emerald-500">{{ formatCurrency(summary.income_total) }}</p>
+              <p class="text-2xl font-bold text-emerald-500">{{ formatCurrency(totalSummary.income_total) }}</p>
             </div>
 
             <div class="bg-white dark:bg-[#1a2632] border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-sm">
               <p class="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ t('totalExpense') }}</p>
-              <p class="text-2xl font-bold text-rose-500">{{ formatCurrency(summary.expense_total) }}</p>
+              <p class="text-2xl font-bold text-rose-500">{{ formatCurrency(totalSummary.expense_total) }}</p>
             </div>
 
             <div class="bg-white dark:bg-[#1a2632] border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-sm">
               <p class="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ t('netBalance') }}</p>
-              <p class="text-2xl font-bold text-slate-900 dark:text-white">{{ formatCurrency(summary.net_balance) }}</p>
+              <p class="text-2xl font-bold text-slate-900 dark:text-white">{{ formatCurrency(totalSummary.net_balance) }}</p>
             </div>
           </div>
 
@@ -841,6 +968,7 @@ onBeforeUnmount(() => {
                   <option value="this_month">{{ t('thisMonth') }}</option>
                   <option value="last_month">{{ t('lastMonth') }}</option>
                   <option value="this_year">{{ t('thisYear') }}</option>
+                  <option value="all">{{ t('allTime') }}</option>
                 </select>
 
                 <select

@@ -1,8 +1,10 @@
 <script setup>
 import { computed, reactive, ref } from "vue";
 import { useRouter } from "vue-router";
+import { useToast } from "../composables/useToast";
 
 const router = useRouter();
+const { showToast } = useToast();
 
 const mode = ref("login");
 const isLoading = ref(false);
@@ -107,18 +109,23 @@ const submitAuth = async () => {
       mode.value === "login"
         ? "Connexion reussie. Redirection..."
         : "Compte cree avec succes. Redirection...";
+    showToast(successMessage.value);
 
     await router.push("/dashboard");
   } catch (error) {
-    errorMessage.value =
+    const message =
       error instanceof Error ? error.message : "Une erreur est survenue.";
+    errorMessage.value = message;
+    showToast(message, "error");
   } finally {
     isLoading.value = false;
   }
 };
 
 const socialNotImplemented = () => {
-  errorMessage.value = "Connexion sociale non implementee pour le moment.";
+  const message = "Connexion sociale non implementee pour le moment.";
+  errorMessage.value = message;
+  showToast(message, "error");
 };
 
 const onRegisterImageChange = (event) => {
