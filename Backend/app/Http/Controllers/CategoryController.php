@@ -5,9 +5,27 @@ namespace App\Http\Controllers;
 use App\Models\Category;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class CategoryController extends Controller
 {
+    private const ALLOWED_ICONS = [
+        'label',
+        'travel',
+        'shopping_cart',
+        'restaurant',
+        'local_gas_station',
+        'sports_esports',
+        'movie',
+        'subscriptions',
+        'school',
+        'health_and_safety',
+        'home',
+        'work',
+        'savings',
+        'payments',
+    ];
+
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
@@ -16,13 +34,14 @@ class CategoryController extends Controller
             ->withCount('transactions')
             ->where('user_id', $user->id)
             ->orderBy('name')
-            ->get(['id', 'name', 'color_hex']);
+            ->get(['id', 'name', 'color_hex', 'icon']);
 
         return response()->json([
             'categories' => $categories->map(fn (Category $category): array => [
                 'id' => $category->id,
                 'name' => $category->name,
                 'color_hex' => $category->color_hex,
+                'icon' => $category->icon,
                 'transactions_count' => $category->transactions_count,
             ]),
         ]);
@@ -35,12 +54,14 @@ class CategoryController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'color_hex' => ['nullable', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'icon' => ['nullable', 'string', Rule::in(self::ALLOWED_ICONS)],
         ]);
 
         $category = Category::create([
             'user_id' => $user->id,
             'name' => $validated['name'],
             'color_hex' => $validated['color_hex'] ?? null,
+            'icon' => $validated['icon'] ?? 'label',
         ]);
 
         return response()->json([
@@ -49,6 +70,7 @@ class CategoryController extends Controller
                 'id' => $category->id,
                 'name' => $category->name,
                 'color_hex' => $category->color_hex,
+                'icon' => $category->icon,
                 'transactions_count' => 0,
             ],
         ], 201);
@@ -67,6 +89,7 @@ class CategoryController extends Controller
         $validated = $request->validate([
             'name' => ['sometimes', 'required', 'string', 'max:255'],
             'color_hex' => ['nullable', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'icon' => ['sometimes', 'nullable', 'string', Rule::in(self::ALLOWED_ICONS)],
         ]);
 
         $category->update($validated);
@@ -78,6 +101,7 @@ class CategoryController extends Controller
                 'id' => $category->id,
                 'name' => $category->name,
                 'color_hex' => $category->color_hex,
+                'icon' => $category->icon,
                 'transactions_count' => $category->transactions_count,
             ],
         ]);

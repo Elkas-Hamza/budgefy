@@ -11,12 +11,12 @@ use Illuminate\Database\Seeder;
 class FinanceSeeder extends Seeder
 {
     private const BASE_CATEGORIES = [
-        ['name' => 'Logement', 'color_hex' => '#137fec'],
-        ['name' => 'Alimentation', 'color_hex' => '#10b981'],
-        ['name' => 'Transport', 'color_hex' => '#f59e0b'],
-        ['name' => 'Loisirs', 'color_hex' => '#8b5cf6'],
-        ['name' => 'Salaire', 'color_hex' => '#06b6d4'],
-        ['name' => 'Freelance', 'color_hex' => '#22c55e'],
+        ['name' => 'Logement', 'color_hex' => '#137fec', 'icon' => 'home'],
+        ['name' => 'Alimentation', 'color_hex' => '#10b981', 'icon' => 'restaurant'],
+        ['name' => 'Transport', 'color_hex' => '#f59e0b', 'icon' => 'local_gas_station'],
+        ['name' => 'Loisirs', 'color_hex' => '#8b5cf6', 'icon' => 'sports_esports'],
+        ['name' => 'Salaire', 'color_hex' => '#06b6d4', 'icon' => 'payments'],
+        ['name' => 'Freelance', 'color_hex' => '#22c55e', 'icon' => 'work'],
     ];
 
     /**
@@ -44,6 +44,7 @@ class FinanceSeeder extends Seeder
                     ],
                     [
                         'color_hex' => $categoryData['color_hex'],
+                        'icon' => $categoryData['icon'],
                     ]
                 );
 

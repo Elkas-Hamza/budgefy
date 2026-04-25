@@ -1,8 +1,10 @@
 <script setup>
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import { useToast } from '../composables/useToast'
 
 const router = useRouter()
+const { showToast } = useToast()
 
 const authUser = ref(null)
 const isSidebarCollapsed = ref(false)
@@ -430,8 +432,9 @@ const loadUser = async () => {
       applyProfileFormFromUser(user)
     }
   } catch (error) {
-    errorMessage.value =
-      error instanceof Error ? error.message : t('errUnexpected')
+    const message = error instanceof Error ? error.message : t('errUnexpected')
+    errorMessage.value = message
+    showToast(message, 'error')
   } finally {
     isLoading.value = false
   }
@@ -496,10 +499,11 @@ const saveProfile = async () => {
     authUser.value = updatedUser
     localStorage.setItem('auth_user', JSON.stringify(updatedUser))
     applyProfileFormFromUser(updatedUser)
-    infoMessage.value = t('successProfileSaved')
+    showToast(t('successProfileSaved'))
   } catch (error) {
-    errorMessage.value =
-      error instanceof Error ? error.message : t('errSaveProfile')
+    const message = error instanceof Error ? error.message : t('errSaveProfile')
+    errorMessage.value = message
+    showToast(message, 'error')
   } finally {
     isSavingProfile.value = false
   }
@@ -517,8 +521,10 @@ const savePreferences = async () => {
     notifyPreferencesUpdated()
 
     infoMessage.value = t('successPreferencesSaved')
+    showToast(t('successPreferencesSaved'))
   } catch {
     errorMessage.value = t('errSavePreferences')
+    showToast(t('errSavePreferences'), 'error')
   } finally {
     isSavingPreferences.value = false
   }

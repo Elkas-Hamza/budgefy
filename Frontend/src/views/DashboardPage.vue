@@ -1,14 +1,20 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useToast } from '../composables/useToast'
 
 const router = useRouter()
+const { showToast } = useToast()
 
 const isLoading = ref(true)
 const errorMessage = ref('')
 const searchTerm = ref('')
 const authUser = ref(null)
 const isSidebarCollapsed = ref(false)
+const hoveredTrendSegment = ref(null)
+const pinnedTrendSegment = ref(null)
+const hoveredCategoryId = ref(null)
+const hoveredCategoryName = ref('')
 
 const dashboard = ref({
   summary: {
@@ -224,6 +230,48 @@ const categoryTotal = computed(() => {
   }, 0)
 })
 
+const hoveredCategoryStyle = (category) => {
+  const share = Number(category?.share_percentage || 0)
+
+  return {
+    width: `${Math.max(share, 2)}%`,
+  }
+}
+
+const isHoveredCategory = (category) => {
+  return hoveredCategoryId.value === category?.category_id
+}
+
+const setHoveredCategory = (category) => {
+  hoveredCategoryId.value = category?.category_id ?? null
+  hoveredCategoryName.value = String(category?.name ?? '').trim().toLowerCase()
+}
+
+const clearHoveredCategory = () => {
+  hoveredCategoryId.value = null
+  hoveredCategoryName.value = ''
+}
+
+const normalizeCategoryName = (value) => String(value ?? '').trim().toLowerCase()
+
+const isHighlightedTrendCategory = (segment) => {
+  if (!hoveredCategoryName.value) {
+    return false
+  }
+
+  return normalizeCategoryName(segment?.category) === hoveredCategoryName.value
+}
+
+const trendSegmentHighlightClass = (segment) => {
+  if (!hoveredCategoryName.value) {
+    return ''
+  }
+
+  return isHighlightedTrendCategory(segment)
+    ? 'ring-2 ring-primary ring-offset-1 ring-offset-background-light dark:ring-offset-background-dark scale-y-[1.04] z-10 shadow-lg brightness-110'
+    : 'opacity-20 saturate-50'
+}
+
 const filteredTransactions = computed(() => {
   const query = searchTerm.value.trim().toLowerCase()
 
@@ -287,6 +335,76 @@ const trendHeightStyle = (value) => {
   return { height: `${clamped}%` }
 }
 
+const trendSegmentStyle = (segment, type, index) => {
+  const amount = Math.max(Number(segment?.amount || 0), 0.0001)
+
+  if (type === 'income') {
+    const opacityTop = Math.max(0.55, 0.95 - index * 0.06)
+    const opacityBottom = Math.max(0.4, 0.78 - index * 0.06)
+
+    return {
+      flexGrow: String(amount),
+      flexBasis: '0%',
+      backgroundImage: `linear-gradient(180deg, rgba(16, 185, 129, ${opacityTop}) 0%, rgba(5, 150, 105, ${opacityBottom}) 100%)`,
+      boxShadow: 'inset 0 0 0 1px rgba(16, 185, 129, 0.18)',
+    }
+  }
+
+  const opacityTop = Math.max(0.55, 0.95 - index * 0.06)
+  const opacityBottom = Math.max(0.4, 0.78 - index * 0.06)
+
+  return {
+    flexGrow: String(amount),
+    flexBasis: '0%',
+    backgroundImage: `linear-gradient(180deg, rgba(239, 68, 68, ${opacityTop}) 0%, rgba(220, 38, 38, ${opacityBottom}) 100%)`,
+    boxShadow: 'inset 0 0 0 1px rgba(239, 68, 68, 0.2)',
+  }
+}
+
+const trendSegmentLabel = (item, segment, type) => {
+  const typeLabel = type === 'income' ? t('income') : t('expense')
+
+  return `${item.label} - ${typeLabel}: ${segment.category} (${formatCurrency(segment.amount)})`
+}
+
+const activeTrendSegment = computed(() => {
+  return pinnedTrendSegment.value ?? hoveredTrendSegment.value
+})
+
+const setHoveredTrendSegment = (item, segment, type) => {
+  hoveredTrendSegment.value = {
+    monthLabel: item.label,
+    type,
+    category: segment.category,
+    amount: Number(segment.amount || 0),
+  }
+}
+
+const clearHoveredTrendSegment = () => {
+  hoveredTrendSegment.value = null
+}
+
+const togglePinnedTrendSegment = (item, segment, type) => {
+  const nextValue = {
+    monthLabel: item.label,
+    type,
+    category: segment.category,
+    amount: Number(segment.amount || 0),
+  }
+
+  if (
+    pinnedTrendSegment.value
+    && pinnedTrendSegment.value.monthLabel === nextValue.monthLabel
+    && pinnedTrendSegment.value.type === nextValue.type
+    && pinnedTrendSegment.value.category === nextValue.category
+  ) {
+    pinnedTrendSegment.value = null
+    return
+  }
+
+  pinnedTrendSegment.value = nextValue
+}
+
 const statusLabel = (status) => {
   return status === 'completed' ? t('statusCompleted') : t('statusPending')
 }
@@ -315,6 +433,20 @@ const iconContainerClass = (type) => {
   return type === 'income'
     ? 'bg-primary/10 text-primary'
     : 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600'
+}
+
+const openCategoryTransactions = (category) => {
+  if (!category?.category_id) {
+    return
+  }
+
+  router.push({
+    name: 'transactions',
+    query: {
+      category_id: String(category.category_id),
+      period: 'all',
+    },
+  })
 }
 
 const loadDashboard = async () => {
@@ -370,10 +502,12 @@ const loadDashboard = async () => {
         : [],
     }
   } catch (error) {
-    errorMessage.value =
+    const message =
       error instanceof Error
         ? error.message
         : t('errUnexpected')
+    errorMessage.value = message
+    showToast(message, 'error')
   } finally {
     isLoading.value = false
   }
@@ -582,18 +716,81 @@ onBeforeUnmount(() => {
                   </div>
                 </div>
 
-                <div class="h-64 flex items-end justify-between gap-3 px-2">
+                <div v-if="dashboard.monthly_trends.length > 0" class="h-64 flex items-end justify-between gap-3 px-2">
                   <div
                     v-for="item in dashboard.monthly_trends"
                     :key="item.month_key"
-                    class="flex-1 flex flex-col items-center gap-2"
+                    class="flex-1 h-full min-w-0 flex flex-col items-center gap-2"
                   >
-                    <div class="w-full flex items-end gap-1 h-full">
-                      <div class="flex-1 bg-primary/80 rounded-t-sm" :style="trendHeightStyle(item.income)"></div>
-                      <div class="flex-1 bg-slate-200 dark:bg-slate-700 rounded-t-sm" :style="trendHeightStyle(item.expense)"></div>
+                    <div class="w-full flex-1 min-h-0 flex items-end gap-2">
+                      <div class="flex-1 h-full flex items-end">
+                        <div class="w-full rounded-t-sm overflow-hidden flex flex-col-reverse min-h-[6px]" :style="trendHeightStyle(item.income)">
+                          <button
+                            v-for="(segment, segmentIndex) in item.income_segments || []"
+                            :key="`${item.month_key}-income-${segment.category}`"
+                            class="w-full cursor-pointer border-t border-background-light dark:border-background-dark transition duration-150 hover:brightness-110"
+                            :class="trendSegmentHighlightClass(segment)"
+                            :style="trendSegmentStyle(segment, 'income', segmentIndex)"
+                            :title="trendSegmentLabel(item, segment, 'income')"
+                            type="button"
+                            @mouseenter="setHoveredTrendSegment(item, segment, 'income')"
+                            @mouseleave="clearHoveredTrendSegment"
+                            @click="togglePinnedTrendSegment(item, segment, 'income')"
+                          ></button>
+                          <div
+                            v-if="!(item.income_segments || []).length"
+                            class="w-full h-full bg-emerald-100 dark:bg-emerald-900/30"
+                            :class="hoveredCategoryName ? 'opacity-30' : ''"
+                          ></div>
+                        </div>
+                      </div>
+
+                      <div class="flex-1 h-full flex items-end">
+                        <div class="w-full rounded-t-sm overflow-hidden flex flex-col-reverse min-h-[6px]" :style="trendHeightStyle(item.expense)">
+                          <button
+                            v-for="(segment, segmentIndex) in item.expense_segments || []"
+                            :key="`${item.month_key}-expense-${segment.category}`"
+                            class="w-full cursor-pointer border-t border-background-light dark:border-background-dark transition duration-150 hover:brightness-110"
+                            :class="trendSegmentHighlightClass(segment)"
+                            :style="trendSegmentStyle(segment, 'expense', segmentIndex)"
+                            :title="trendSegmentLabel(item, segment, 'expense')"
+                            type="button"
+                            @mouseenter="setHoveredTrendSegment(item, segment, 'expense')"
+                            @mouseleave="clearHoveredTrendSegment"
+                            @click="togglePinnedTrendSegment(item, segment, 'expense')"
+                          ></button>
+                          <div
+                            v-if="!(item.expense_segments || []).length"
+                            class="w-full h-full bg-rose-100 dark:bg-rose-900/30"
+                            :class="hoveredCategoryName ? 'opacity-30' : ''"
+                          ></div>
+                        </div>
+                      </div>
                     </div>
                     <span class="text-[10px] text-slate-500 dark:text-slate-400">{{ item.label }}</span>
                   </div>
+                </div>
+
+                <template v-if="dashboard.monthly_trends.length > 0">
+                  <div class="mt-4 flex items-center justify-between gap-4 text-xs">
+                    <div class="flex items-center gap-4 text-slate-500 dark:text-slate-400">
+                      <span class="inline-flex items-center gap-2"><span class="size-2 rounded-full bg-emerald-500"></span>{{ t('income') }}</span>
+                      <span class="inline-flex items-center gap-2"><span class="size-2 rounded-full bg-rose-500"></span>{{ t('expense') }}</span>
+                    </div>
+                    <span class="text-slate-400 dark:text-slate-500">Hover a segment, click to pin details.</span>
+                  </div>
+
+                  <div
+                    v-if="activeTrendSegment"
+                    class="mt-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 px-3 py-2 text-sm"
+                  >
+                    <span class="font-semibold text-slate-900 dark:text-white">{{ activeTrendSegment.type === 'income' ? t('income') : t('expense') }}</span>
+                    <span class="text-slate-600 dark:text-slate-300">: {{ activeTrendSegment.category }} - {{ formatCurrency(activeTrendSegment.amount) }}</span>
+                  </div>
+                </template>
+
+                <div v-if="dashboard.monthly_trends.length === 0" class="h-64 grid place-items-center text-sm text-slate-500 dark:text-slate-400">
+                  {{ t('errLoadDashboard') }}
                 </div>
               </div>
 
@@ -606,16 +803,41 @@ onBeforeUnmount(() => {
                 <div class="space-y-3">
                   <div
                     v-for="category in dashboard.category_breakdown"
-                    :key="category.name"
-                    class="flex items-center justify-between text-sm"
+                    :key="`${category.category_id ?? 'none'}-${category.name}`"
+                    class="rounded-xl border border-transparent px-3 py-2 text-sm transition-all"
+                    :class="[
+                      category.category_id ? 'cursor-pointer' : '',
+                      isHoveredCategory(category)
+                        ? 'bg-primary/5 border-primary/20 shadow-sm dark:bg-primary/10'
+                        : 'hover:bg-slate-100 dark:hover:bg-slate-800/60',
+                    ]"
+                    @mouseenter="setHoveredCategory(category)"
+                    @mouseleave="clearHoveredCategory"
+                    @click="openCategoryTransactions(category)"
                   >
-                    <div class="flex items-center gap-2 min-w-0">
-                      <span class="size-2 rounded-full" :style="{ backgroundColor: category.color_hex || '#94a3b8' }"></span>
-                      <span class="text-slate-600 dark:text-slate-400 truncate">{{ category.name }}</span>
+                    <div class="flex items-center justify-between gap-3">
+                      <div class="flex items-center gap-2 min-w-0">
+                        <span
+                          class="size-2 rounded-full transition-all"
+                          :class="isHoveredCategory(category) ? 'scale-125' : 'opacity-80'"
+                          :style="{ backgroundColor: category.color_hex || '#94a3b8', boxShadow: isHoveredCategory(category) ? `0 0 0 6px ${category.color_hex || '#94a3b8'}22` : 'none' }"
+                        ></span>
+                        <span class="text-slate-600 dark:text-slate-400 truncate" :class="isHoveredCategory(category) ? 'font-semibold text-slate-900 dark:text-white' : ''">{{ category.name }}</span>
+                      </div>
+                      <span class="font-bold ml-3 whitespace-nowrap dark:text-slate-400">
+                        {{ formatCurrency(category.amount) }} ({{ Number(category.share_percentage).toFixed(0) }}%)
+                      </span>
                     </div>
-                    <span class="font-bold ml-3 whitespace-nowrap">
-                      {{ formatCurrency(category.amount) }} ({{ Number(category.share_percentage).toFixed(0) }}%)
-                    </span>
+                    <div class="mt-2 h-2 w-full rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                      <div
+                        class="h-full rounded-full transition-all duration-200"
+                        :class="isHoveredCategory(category) ? 'shadow-[0_0_18px_rgba(19,126,236,0.45)]' : 'opacity-70'"
+                        :style="{
+                          width: hoveredCategoryStyle(category).width,
+                          backgroundColor: category.color_hex || '#137fec',
+                        }"
+                      ></div>
+                    </div>
                   </div>
 
                   <p
@@ -658,7 +880,7 @@ onBeforeUnmount(() => {
                           <div class="size-8 rounded flex items-center justify-center" :class="iconContainerClass(transaction.type)">
                             <span class="material-symbols-outlined text-sm">{{ transactionIcon(transaction.type) }}</span>
                           </div>
-                          <span class="text-sm font-semibold">{{ transaction.description }}</span>
+                          <span class="text-sm font-semibold dark:text-slate-400">{{ transaction.description }}</span>
                         </div>
                       </td>
                       <td class="px-6 py-4 text-sm text-slate-500">{{ transaction.category }}</td>
