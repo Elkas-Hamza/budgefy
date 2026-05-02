@@ -34,16 +34,9 @@ class CategoryApiTest extends TestCase
 
         $indexResponse->assertOk();
         $indexResponse->assertJsonStructure([
-            'categories' => [
-                [
-                    'id',
-                    'name',
-                    'color_hex',
-                    'icon',
-                    'transactions_count',
-                ],
-            ],
+            'categories',
         ]);
+        $indexResponse->assertJsonCount(0, 'categories');
 
         $createResponse = $this->postJson('/api/categories', [
             'name' => 'Travel',

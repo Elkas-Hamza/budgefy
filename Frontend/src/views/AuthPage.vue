@@ -1,5 +1,5 @@
 <script setup>
-import { computed, reactive, ref } from "vue";
+import { computed, onBeforeUnmount, reactive, ref } from "vue";
 import { useRouter } from "vue-router";
 import { useToast } from "../composables/useToast";
 
@@ -10,6 +10,13 @@ const mode = ref("login");
 const isLoading = ref(false);
 const errorMessage = ref("");
 const successMessage = ref("");
+const forgotPasswordModalOpen = ref(false);
+const forgotPasswordLoading = ref(false);
+const forgotPasswordMessage = ref("");
+const forgotPasswordError = ref("");
+const forgotPasswordEmail = ref("");
+const resendCooldownSeconds = ref(0);
+const resendCooldownTimerId = ref(null);
 
 const form = reactive({
   name: "",
@@ -26,6 +33,13 @@ const submitLabel = computed(() => {
 
 const submitEndpoint = computed(() => {
   return mode.value === "login" ? "/api/auth/login" : "/api/auth/register";
+});
+
+const resendCooldownLabel = computed(() => {
+  const minutes = Math.floor(resendCooldownSeconds.value / 60);
+  const seconds = resendCooldownSeconds.value % 60;
+
+  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 });
 
 const switchMode = (nextMode) => {
@@ -50,16 +64,44 @@ const extractErrorMessage = (payload) => {
   return payload.message ?? "Une erreur est survenue.";
 };
 
+const apiBaseUrl = () => {
+  return (import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "");
+};
+
+const clearResendCooldownTimer = () => {
+  if (resendCooldownTimerId.value) {
+    clearInterval(resendCooldownTimerId.value);
+    resendCooldownTimerId.value = null;
+  }
+};
+
+const startResendCooldown = (minutes) => {
+  clearResendCooldownTimer();
+
+  resendCooldownSeconds.value = Math.max(0, Math.floor(minutes * 60));
+
+  if (resendCooldownSeconds.value === 0) {
+    return;
+  }
+
+  resendCooldownTimerId.value = setInterval(() => {
+    if (resendCooldownSeconds.value <= 1) {
+      resendCooldownSeconds.value = 0;
+      clearResendCooldownTimer();
+
+      return;
+    }
+
+    resendCooldownSeconds.value -= 1;
+  }, 1000);
+};
+
 const submitAuth = async () => {
   errorMessage.value = "";
   successMessage.value = "";
   isLoading.value = true;
 
-  const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || "").replace(
-    /\/$/,
-    "",
-  );
-  const endpointUrl = `${apiBaseUrl}${submitEndpoint.value}`;
+  const endpointUrl = `${apiBaseUrl()}${submitEndpoint.value}`;
 
   try {
     const requestInit = {
@@ -128,9 +170,72 @@ const socialNotImplemented = () => {
   showToast(message, "error");
 };
 
+const openForgotPasswordModal = () => {
+  forgotPasswordModalOpen.value = true;
+  forgotPasswordMessage.value = "";
+  forgotPasswordError.value = "";
+  forgotPasswordEmail.value = form.email;
+};
+
+
+const closeForgotPasswordModal = () => {
+  forgotPasswordModalOpen.value = false;
+  forgotPasswordMessage.value = "";
+  forgotPasswordError.value = "";
+};
+
+const requestResetCode = async () => {
+  if (forgotPasswordLoading.value || resendCooldownSeconds.value > 0) {
+    return;
+  }
+
+  forgotPasswordMessage.value = "";
+  forgotPasswordError.value = "";
+  forgotPasswordLoading.value = true;
+
+  try {
+    const response = await fetch(`${apiBaseUrl()}/api/auth/forgot-password`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({
+        email: forgotPasswordEmail.value,
+      }),
+    });
+
+    const data = await response.json().catch(() => null);
+
+    if (!response.ok) {
+      if (response.status === 429) {
+        const retryAfterMinutes = Number(data?.retry_after_minutes ?? 10);
+        startResendCooldown(retryAfterMinutes);
+      }
+
+      throw new Error(extractErrorMessage(data));
+    }
+
+    forgotPasswordMessage.value = data?.message ?? "Code envoye par email.";
+    showToast(forgotPasswordMessage.value);
+    startResendCooldown(10);
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Une erreur est survenue.";
+    forgotPasswordError.value = message;
+    showToast(message, "error");
+  } finally {
+    forgotPasswordLoading.value = false;
+  }
+};
+
 const onRegisterImageChange = (event) => {
   registerImageFile.value = event?.target?.files?.[0] ?? null;
 };
+
+onBeforeUnmount(() => {
+  clearResendCooldownTimer();
+});
 
 const dark_light = window.dark_light;
 </script>
@@ -348,11 +453,12 @@ const dark_light = window.dark_light;
                   class="text-sm font-medium text-slate-900 dark:text-slate-200"
                   >Mot de passe</label
                 >
-                <a
+                <button
                   v-if="mode === 'login'"
                   class="text-xs text-primary font-semibold hover:underline"
-                  href="#"
-                  >Mot de passe oublie ?</a
+                  type="button"
+                  @click="openForgotPasswordModal"
+                  >Mot de passe oublie ?</button
                 >
               </div>
               <div class="relative">
@@ -399,6 +505,7 @@ const dark_light = window.dark_light;
             >
               {{ isLoading ? "Veuillez patienter..." : submitLabel }}
             </button>
+
           </form>
 
           <div class="relative flex items-center py-4">
@@ -450,6 +557,64 @@ const dark_light = window.dark_light;
         </div>
       </div>
     </main>
+
+    <div
+      v-if="forgotPasswordModalOpen"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 px-4"
+      @click.self="closeForgotPasswordModal"
+    >
+      <div
+        class="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-800 dark:bg-slate-900"
+      >
+        <div class="mb-5 flex items-start justify-between gap-4">
+          <div>
+            <h3 class="text-lg font-bold text-slate-900 dark:text-white">
+              Reinitialiser le mot de passe
+            </h3>
+            <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">
+              Un code a 6 chiffres sera envoye et valable 10 minutes.
+            </p>
+          </div>
+          <button
+            type="button"
+            class="rounded-lg p-1 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+            @click="closeForgotPasswordModal"
+          >
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+
+        <label class="mb-2 block text-sm font-medium text-slate-900 dark:text-slate-200"
+          >Adresse e-mail</label
+        >
+        <input
+          v-model="forgotPasswordEmail"
+          type="email"
+          placeholder="exemple@email.com"
+          class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary dark:border-slate-800 dark:bg-slate-950 dark:text-white"
+        />
+
+        <p v-if="forgotPasswordError" class="mt-3 text-sm text-red-400">
+          {{ forgotPasswordError }}
+        </p>
+        <p v-if="forgotPasswordMessage" class="mt-3 text-sm text-emerald-400">
+          {{ forgotPasswordMessage }}
+        </p>
+
+        <button
+          type="button"
+          :disabled="forgotPasswordLoading || resendCooldownSeconds > 0"
+          class="mt-5 w-full rounded-xl bg-primary py-3 font-bold text-white transition-all hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+          @click="requestResetCode"
+        >
+          <span v-if="forgotPasswordLoading">Envoi en cours...</span>
+          <span v-else-if="resendCooldownSeconds > 0">
+            Renvoyer dans {{ resendCooldownLabel }}
+          </span>
+          <span v-else>Envoyer le code</span>
+        </button>
+      </div>
+    </div>
 
     <footer
       class="py-6 border-t border-slate-200 dark:border-slate-800 bg-background-light dark:bg-background-dark"
