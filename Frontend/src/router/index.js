@@ -8,6 +8,8 @@ import AuthPage from '../views/AuthPage.vue'
 import SettingsPage from '../views/SettingsPage.vue'
 import VerifyEmailPage from '../views/VerifyEmailPage.vue'
 import ConfirmAccountDeletionPage from '../views/ConfirmAccountDeletionPage.vue'
+import AdminLoginPage from '../views/AdminLoginPage.vue'
+import AdminDashboardPage from '../views/AdminDashboardPage.vue'
 
 const routes = [
   { path: '/', name: 'landing', component: LandingPage },
@@ -23,6 +25,8 @@ const routes = [
     component: ConfirmAccountDeletionPage,
   },
   { path: '/settings', name: 'settings', component: SettingsPage },
+  { path: '/admin', name: 'admin-login', component: AdminLoginPage },
+  { path: '/admin/dashboard', name: 'admin-dashboard', component: AdminDashboardPage },
 ]
 
 const router = createRouter({

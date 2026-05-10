@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DashboardController;
@@ -36,20 +37,34 @@ Route::middleware('api.token')->prefix('auth')->group(function (): void {
         ->name('verification.send');
 });
 
-Route::middleware('api.token')->prefix('dashboard')->group(function (): void {
+Route::middleware(['api.token', 'track.active.users'])->prefix('dashboard')->group(function (): void {
     Route::get('/overview', [DashboardController::class, 'overview']);
 });
 
-Route::middleware('api.token')->prefix('transactions')->group(function (): void {
+Route::middleware(['api.token', 'track.active.users'])->prefix('transactions')->group(function (): void {
     Route::get('/', [TransactionController::class, 'index']);
     Route::post('/', [TransactionController::class, 'store']);
     Route::put('/{transaction}', [TransactionController::class, 'update']);
     Route::delete('/{transaction}', [TransactionController::class, 'destroy']);
 });
 
-Route::middleware('api.token')->prefix('categories')->group(function (): void {
+Route::middleware(['api.token', 'track.active.users'])->prefix('categories')->group(function (): void {
     Route::get('/', [CategoryController::class, 'index']);
     Route::post('/', [CategoryController::class, 'store']);
     Route::put('/{category}', [CategoryController::class, 'update']);
     Route::delete('/{category}', [CategoryController::class, 'destroy']);
+});
+
+Route::prefix('admin')->group(function (): void {
+    Route::post('/login', [AdminController::class, 'login']);
+});
+
+Route::middleware(['admin', 'track.active.users'])->prefix('admin')->group(function (): void {
+    Route::get('/users', [AdminController::class, 'getUsers']);
+    Route::get('/users/{id}', [AdminController::class, 'getUser']);
+    Route::post('/users', [AdminController::class, 'createUser']);
+    Route::put('/users/{id}', [AdminController::class, 'updateUser']);
+    Route::delete('/users/{id}', [AdminController::class, 'deleteUser']);
+    Route::get('/active-users', [AdminController::class, 'getActiveUsers']);
+    Route::get('/stats', [AdminController::class, 'getStats']);
 });

@@ -11,3 +11,5 @@ Route::view('/transactions', 'pages.transactions')->name('transactions');
 Route::view('/categories', 'pages.categories')->name('categories');
 Route::view('/login', 'pages.auth')->name('login');
 Route::view('/settings', 'pages.settings')->name('settings');
+Route::view('/admin', 'pages.admin.login')->name('admin.login');
+Route::view('/admin/dashboard', 'pages.admin.dashboard')->name('admin.dashboard');
