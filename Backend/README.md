@@ -41,6 +41,46 @@ php artisan boost:install
 
 Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
 
+## Social Login Setup
+
+Google social login uses Laravel Socialite and the popup callback flow in the frontend.
+
+Install the backend dependency if it is not already present:
+
+```bash
+composer require laravel/socialite
+```
+
+Add these variables to your backend `.env` file:
+
+```env
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+GOOGLE_REDIRECT_URI=${APP_URL}/auth/callback/google
+```
+
+If the Google popup opens an error page that says `Missing required parameter: client_id`, it means the backend environment is missing `GOOGLE_CLIENT_ID` or the config cache has not been cleared.
+
+After editing `.env`, run:
+
+```bash
+php artisan config:clear
+php artisan cache:clear
+```
+
+The app expects these redirect URLs in the provider consoles:
+
+- Google: `https://your-backend-domain/auth/callback/google`
+
+After updating the environment, run:
+
+```bash
+php artisan config:clear
+php artisan cache:clear
+php artisan migrate
+```
+
+
 ## Contributing
 
 Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).

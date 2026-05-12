@@ -170,6 +170,68 @@ const socialNotImplemented = () => {
   showToast(message, "error");
 };
 
+const openSocialPopup = (provider) => {
+  errorMessage.value = '';
+  const width = 600;
+  const height = 700;
+  const left = Math.round((screen.width - width) / 2);
+  const top = Math.round((screen.height - height) / 2);
+  const url = `${apiBaseUrl()}/auth/redirect/${provider}?origin=${encodeURIComponent(window.location.origin)}`;
+
+  const popup = window.open(
+    url,
+    'social_login',
+    `toolbar=0,location=0,status=0,menubar=0,scrollbars=1,resizable=1,width=${width},height=${height},top=${top},left=${left}`,
+  );
+
+  if (!popup) {
+    const msg = 'Impossible d ouvrir la fenetre popup. Verifiez les bloqueurs de fenetres.';
+    errorMessage.value = msg;
+    showToast(msg, 'error');
+    return;
+  }
+
+  const messageHandler = async (e) => {
+    if (!e?.data || e.data.type !== 'socialLogin' || !e.data.token) {
+      return;
+    }
+
+    try {
+      const token = String(e.data.token);
+      localStorage.setItem('auth_token', token);
+
+      const response = await fetch(`${apiBaseUrl()}/api/auth/me`, {
+        headers: {
+          Accept: 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const body = await response.json().catch(() => null);
+        if (body?.user) {
+          localStorage.setItem('auth_user', JSON.stringify(body.user));
+        }
+      }
+
+      showToast('Connexion reussie. Redirection...');
+      window.removeEventListener('message', messageHandler);
+      try { popup.close(); } catch {}
+      await router.push('/dashboard');
+    } catch (err) {
+      window.removeEventListener('message', messageHandler);
+      showToast('Erreur lors de la connexion sociale', 'error');
+    }
+  };
+
+  window.addEventListener('message', messageHandler);
+
+  // fallback: remove listener after 2 minutes
+  setTimeout(() => {
+    window.removeEventListener('message', messageHandler);
+  }, 2 * 60 * 1000);
+};
+
 const openForgotPasswordModal = () => {
   forgotPasswordModalOpen.value = true;
   forgotPasswordMessage.value = "";
@@ -521,23 +583,14 @@ const dark_light = window.dark_light;
             ></div>
           </div>
 
-          <div class="grid grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 gap-4">
             <button
               class="flex items-center justify-center gap-2 py-3 px-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
               type="button"
-              @click="socialNotImplemented"
+              @click="() => openSocialPopup('google')"
             >
               <span class="text-sm font-semibold text-slate-900 dark:text-white"
                 >Google</span
-              >
-            </button>
-            <button
-              class="flex items-center justify-center gap-2 py-3 px-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
-              type="button"
-              @click="socialNotImplemented"
-            >
-              <span class="text-sm font-semibold text-slate-900 dark:text-white"
-                >Apple</span
               >
             </button>
           </div>

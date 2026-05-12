@@ -536,7 +536,7 @@ const loadTotalSummary = async () => {
   }
 
   const params = new URLSearchParams()
-  params.set('period', 'all')
+  params.set('period', filters.value.period || 'this_month')
   params.set('page', '1')
 
   try {
@@ -685,6 +685,7 @@ const setTypeFilter = (type) => {
   filters.value.type = type
   pagination.value.current_page = 1
   loadTransactions()
+  loadTotalSummary()
 }
 
 const setPage = (nextPage) => {
@@ -726,6 +727,7 @@ watch(
 
     pagination.value.current_page = 1
     loadTransactions()
+    loadTotalSummary()
   },
 )
 
@@ -738,6 +740,7 @@ watch(
 
     pagination.value.current_page = 1
     loadTransactions()
+    loadTotalSummary()
   },
 )
 

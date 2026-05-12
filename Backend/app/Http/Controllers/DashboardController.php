@@ -21,17 +21,23 @@ class DashboardController extends Controller
             ->orderByDesc('occurred_at')
             ->get();
 
-        $incomeTotal = $transactions
+        $periodStart = now()->startOfMonth();
+        $periodEnd = now()->endOfMonth();
+
+        $periodTransactions = $transactions
+            ->filter(fn (Transaction $transaction): bool => $transaction->occurred_at >= $periodStart && $transaction->occurred_at <= $periodEnd);
+
+        $incomeTotal = $periodTransactions
             ->where('type', 'income')
             ->where('status', 'completed')
             ->sum('amount');
-        $expenseTotal = $transactions
+        $expenseTotal = $periodTransactions
             ->where('type', 'expense')
             ->where('status', 'completed')
             ->sum('amount');
 
         $monthlyTrends = $this->buildMonthlyTrends($transactions);
-        $categoryBreakdown = $this->buildCategoryBreakdown($transactions);
+        $categoryBreakdown = $this->buildCategoryBreakdown($periodTransactions);
         $recentTransactions = $this->buildRecentTransactions($transactions);
 
         $periodDate = now();
