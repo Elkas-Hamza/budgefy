@@ -29,6 +29,7 @@ const routes = [
   { path: '/admin', name: 'admin-login', component: AdminLoginPage },
   { path: '/admin/dashboard', name: 'admin-dashboard', component: AdminDashboardPage },
   { path: '/settings', name: 'settings', component: SettingsPage },
+  { path: '/:pathMatch(.*)*', name: 'Error404', component: Error404 },
 ]
 
 const router = createRouter({
