@@ -188,6 +188,24 @@ const closeModals = () => {
   }
 }
 
+// Return a usable image URL for a user. Handles full URLs, data URIs,
+// and local storage paths (prefixing with /storage when needed).
+const getUserImage = (user) => {
+  if (!user) return `https://ui-avatars.com/api/?name=Unknown&background=random`
+
+  const name = encodeURIComponent(user.name || 'Unknown')
+
+  if (user.image) {
+    const url = user.image
+    if (url.startsWith('http') || url.startsWith('//') || url.startsWith('data:')) {
+      return url
+    }
+    return url.startsWith('/') ? url : `/storage/${url}`
+  }
+
+  return `https://ui-avatars.com/api/?name=${name}&background=random`
+}
+
 const previousPage = () => {
   if (currentPage.value > 1) {
     loadUsers(currentPage.value - 1)
@@ -397,7 +415,7 @@ onUnmounted(() => {
                       <div class="shrink-0 h-10 w-10">
                         <img 
                           class="h-10 w-10 rounded-full" 
-                          :src="user.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=random`" 
+                          :src="getUserImage(user)" 
                           :alt="user.name"
                         >
                       </div>
