@@ -72,16 +72,18 @@
 <!---- updates video  --->
 <div class="relative rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-2xl aspect-video w-full flex items-center justify-center">
   <div class="absolute inset-0 bg-slate-900/40 flex items-center justify-center">
-    <v-video
+  <v-video
       :controls-props="{ class: 'px-4' }"
       :rounded="['lg', 'pill']"
       :start-at="10"
       class="w-full"
       image="https://images.unsplash.com/photo-1516570161787-2fd917215a3d?q=80&w=1470&auto=format&fit=crop"
-      src="https://cdn.jsek.work/cdn/vt-sunflowers.mp4"
+      src="https://th.bing.com/th/id/OIG1.BkZkdWzH56asJIs8OT5k?pid=videocreator"
       eager
       floating
       muted
+      autoplay
+      loop
     ></v-video>
   </div>
 </div>
