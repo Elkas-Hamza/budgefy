@@ -17,6 +17,11 @@ const forgotPasswordError = ref("");
 const forgotPasswordEmail = ref("");
 const resendCooldownSeconds = ref(0);
 const resendCooldownTimerId = ref(null);
+const requiresLoginTwoFactor = ref(false);
+const loginTwoFactorCode = ref("");
+const loginTwoFactorTemporaryToken = ref("");
+const loginTwoFactorExpiresAt = ref(null);
+const isVerifyingLoginTwoFactor = ref(false);
 
 const form = reactive({
   name: "",
@@ -42,10 +47,108 @@ const resendCooldownLabel = computed(() => {
   return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 });
 
+const isLoginTwoFactorExpired = computed(() => {
+  if (!loginTwoFactorExpiresAt.value) {
+    return false;
+  }
+
+  return Date.now() > loginTwoFactorExpiresAt.value;
+});
+
+const resetLoginTwoFactorState = () => {
+  requiresLoginTwoFactor.value = false;
+  loginTwoFactorCode.value = "";
+  loginTwoFactorTemporaryToken.value = "";
+  loginTwoFactorExpiresAt.value = null;
+  isVerifyingLoginTwoFactor.value = false;
+};
+
+const beginLoginTwoFactorStep = (payload) => {
+  requiresLoginTwoFactor.value = true;
+  loginTwoFactorCode.value = "";
+  loginTwoFactorTemporaryToken.value = String(payload?.temporary_token ?? "");
+
+  const expiresInMinutes = Number(payload?.expires_in_minutes ?? 10);
+  loginTwoFactorExpiresAt.value =
+    Date.now() + Math.max(1, expiresInMinutes) * 60 * 1000;
+};
+
+const verifyLoginTwoFactorCode = async () => {
+  errorMessage.value = "";
+  successMessage.value = "";
+
+  const cleanedCode = loginTwoFactorCode.value.trim();
+
+  if (!/^\d{4}$/.test(cleanedCode)) {
+    const message = "Veuillez saisir un code a 4 chiffres.";
+    errorMessage.value = message;
+    showToast(message, "error");
+    return;
+  }
+
+  if (!loginTwoFactorTemporaryToken.value) {
+    const message = "Session 2FA invalide. Veuillez vous reconnecter.";
+    errorMessage.value = message;
+    showToast(message, "error");
+    resetLoginTwoFactorState();
+    return;
+  }
+
+  if (isLoginTwoFactorExpired.value) {
+    const message = "Le code 2FA a expire. Veuillez vous reconnecter.";
+    errorMessage.value = message;
+    showToast(message, "error");
+    resetLoginTwoFactorState();
+    return;
+  }
+
+  isVerifyingLoginTwoFactor.value = true;
+
+  try {
+    const response = await fetch(`${apiBaseUrl()}/api/auth/2fa/verify-login`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({
+        code: cleanedCode,
+        temporary_token: loginTwoFactorTemporaryToken.value,
+      }),
+    });
+
+    const data = await response.json().catch(() => null);
+
+    if (!response.ok) {
+      throw new Error(extractErrorMessage(data));
+    }
+
+    if (!data?.token || !data?.user) {
+      throw new Error("Reponse serveur invalide apres verification 2FA.");
+    }
+
+    localStorage.setItem("auth_token", data.token);
+    localStorage.setItem("auth_user", JSON.stringify(data.user));
+
+    successMessage.value = "Connexion reussie. Redirection...";
+    showToast(successMessage.value);
+    resetLoginTwoFactorState();
+    await router.push("/dashboard");
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Une erreur est survenue.";
+    errorMessage.value = message;
+    showToast(message, "error");
+  } finally {
+    isVerifyingLoginTwoFactor.value = false;
+  }
+};
+
 const switchMode = (nextMode) => {
   mode.value = nextMode;
   errorMessage.value = "";
   successMessage.value = "";
+  resetLoginTwoFactorState();
 };
 
 const extractErrorMessage = (payload) => {
@@ -137,6 +240,19 @@ const submitAuth = async () => {
 
     if (!response.ok) {
       throw new Error(extractErrorMessage(data));
+    }
+
+    if (
+      mode.value === "login" &&
+      data?.two_factor_required === true &&
+      data?.temporary_token
+    ) {
+      beginLoginTwoFactorStep(data);
+      successMessage.value =
+        data?.message ??
+        "Code de verification envoye. Saisissez le code recu par email.";
+      showToast(successMessage.value);
+      return;
     }
 
     if (data?.token) {
@@ -419,7 +535,10 @@ const dark_light = window.dark_light;
             </p>
           </div>
 
-          <div class="flex p-1 bg-slate-200 dark:bg-slate-800 rounded-xl">
+          <div
+            v-if="!requiresLoginTwoFactor"
+            class="flex p-1 bg-slate-200 dark:bg-slate-800 rounded-xl"
+          >
             <button
               :class="
                 mode === 'login'
@@ -446,7 +565,64 @@ const dark_light = window.dark_light;
             </button>
           </div>
 
-          <form class="space-y-5" @submit.prevent="submitAuth">
+          <form
+            class="space-y-5"
+            @submit.prevent="requiresLoginTwoFactor ? verifyLoginTwoFactorCode() : submitAuth()"
+          >
+            <template v-if="requiresLoginTwoFactor">
+              <div class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-200">
+                Un code a 4 chiffres a ete envoye sur votre email. Entrez-le pour terminer la connexion.
+              </div>
+
+              <div>
+                <label
+                  class="block mb-2 text-sm font-medium text-slate-900 dark:text-slate-200"
+                >Code de verification (4 chiffres)</label>
+                <div class="relative">
+                  <span
+                    class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                  >pin</span>
+                  <input
+                    v-model="loginTwoFactorCode"
+                    class="w-full pl-12 pr-4 py-3.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none text-slate-900 dark:text-white transition-all text-center text-2xl tracking-[0.4em]"
+                    inputmode="numeric"
+                    maxlength="4"
+                    placeholder="0000"
+                    type="text"
+                  />
+                </div>
+                <p
+                  v-if="isLoginTwoFactorExpired"
+                  class="mt-2 text-sm text-red-400"
+                >
+                  Le code a expire. Relancez la connexion pour recevoir un nouveau code.
+                </p>
+              </div>
+
+              <button
+                :disabled="isVerifyingLoginTwoFactor"
+                class="w-full py-4 bg-primary hover:bg-primary/90 disabled:opacity-60 text-white font-bold rounded-xl shadow-lg shadow-primary/20 transition-all active:scale-[0.98]"
+                type="button"
+                @click="verifyLoginTwoFactorCode"
+              >
+                {{
+                  isVerifyingLoginTwoFactor
+                    ? "Verification..."
+                    : "Verifier le code"
+                }}
+              </button>
+
+              <button
+                :disabled="isVerifyingLoginTwoFactor"
+                class="w-full py-3 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-700 dark:text-slate-300 font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors disabled:opacity-60"
+                type="button"
+                @click="resetLoginTwoFactorState"
+              >
+                Retour a la connexion
+              </button>
+            </template>
+
+            <template v-else>
             <div v-if="mode === 'register'">
               <label
                 class="block mb-2 text-sm font-medium text-slate-900 dark:text-slate-200"
@@ -553,13 +729,6 @@ const dark_light = window.dark_light;
               >
             </div>
 
-            <p v-if="errorMessage" class="text-sm text-red-400">
-              {{ errorMessage }}
-            </p>
-            <p v-if="successMessage" class="text-sm text-emerald-400">
-              {{ successMessage }}
-            </p>
-
             <button
               :disabled="isLoading"
               class="w-full py-4 bg-primary hover:bg-primary/90 disabled:opacity-60 text-white font-bold rounded-xl shadow-lg shadow-primary/20 transition-all active:scale-[0.98]"
@@ -567,10 +736,21 @@ const dark_light = window.dark_light;
             >
               {{ isLoading ? "Veuillez patienter..." : submitLabel }}
             </button>
+            </template>
+
+            <p v-if="errorMessage" class="text-sm text-red-400">
+              {{ errorMessage }}
+            </p>
+            <p v-if="successMessage" class="text-sm text-emerald-400">
+              {{ successMessage }}
+            </p>
 
           </form>
 
-          <div class="relative flex items-center py-4">
+          <div
+            v-if="!requiresLoginTwoFactor"
+            class="relative flex items-center py-4"
+          >
             <div
               class="flex-grow border-t border-slate-200 dark:border-slate-800"
             ></div>
@@ -583,7 +763,7 @@ const dark_light = window.dark_light;
             ></div>
           </div>
 
-          <div class="grid grid-cols-1 gap-4">
+          <div v-if="!requiresLoginTwoFactor" class="grid grid-cols-1 gap-4">
             <button
               class="flex items-center justify-center gap-2 py-3 px-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
               type="button"
@@ -596,6 +776,7 @@ const dark_light = window.dark_light;
           </div>
 
           <p
+            v-if="!requiresLoginTwoFactor"
             class="text-center text-sm text-slate-500 dark:text-slate-400 mt-10"
           >
             En continuant, vous acceptez nos

@@ -1,0 +1,814 @@
+\documentclass{rapportPFA}
+\usepackage{lipsum}
+\usepackage{titling}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{hyperref}
+\usepackage{url}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{geometry}
+\usepackage{wallpaper}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{wrapfig}
+
+\title{Rapport - Budgefy}
+
+\begin{document}
+
+%----------- Informations du rapport ---------
+
+\titre{Application Web de Gestion Financière Personnelle (Budgefy)}
+
+\sujet{Rapport de projet de fin de mati\`ere}
+\enseignant{Prf. MOUSTANSIR \textsc{houssam}}
+\eleves{Ayoub \textsc{Bouagna} \\[6pt]
+        El Kasmi \textsc{Hamza}}
+
+%----------- Initialisation -------------------
+
+\fairemarges
+\fairepagedegarde
+
+%------------ Corps du rapport ----------------
+
+% -------- Remerciements --------
+\newpage
+\thispagestyle{empty}
+\phantomsection
+\addcontentsline{toc}{section}{Remerciements}
+\vspace*{3cm}
+\begin{center}
+    {\LARGE \textbf{Remerciements}}
+\end{center}
+\vspace{2cm}
+
+Nous tenons \`a exprimer notre sinc\`ere gratitude envers toutes les personnes qui ont
+contribu\'e, de pr\`es ou de loin, \`a la r\'ealisation de ce projet.
+
+Nos remerciements s'adressent en premier lieu \`a notre encadrante,
+\textbf{Monsieur HOUSSAM MOUSTANSIR}, pour sa disponibilit\'e, ses conseils avis\'es
+et son soutien tout au long de ce travail. Ses orientations ont \'et\'e d'une valeur
+inestimable pour la bonne conduite du projet.
+
+Nous remercions \'egalement l'ensemble du corps professoral de notre \'etablissement
+pour la formation de qualit\'e dispens\'ee, qui nous a permis d'acqu\'erir les
+comp\'etences n\'ecessaires \`a la r\'ealisation de ce projet.
+
+Enfin, nous exprimons notre reconnaissance envers nos familles et amis pour leur
+soutien moral et leurs encouragements constants.
+
+% -------- Résumé --------
+\newpage
+\thispagestyle{empty}
+\phantomsection
+\addcontentsline{toc}{section}{R\'esum\'e}
+\vspace*{3cm}
+\begin{center}
+    {\LARGE \textbf{R\'esum\'e}}
+\end{center}
+\vspace{2cm}
+
+Ce rapport pr\'esente le d\'eveloppement de \textbf{Budgefy}, une application web
+d\'edi\'ee \`a la gestion financi\`ere personnelle. Le projet repose sur une architecture
+moderne combinant \textbf{Laravel} comme framework backend et \textbf{Vue.js} pour
+l'interface utilisateur dynamique. La communication entre les deux couches est assur\'ee
+par une API RESTful, garantissant une s\'eparation claire des responsabilit\'es et une
+maintenabilit\'e accrue du code.
+
+L'application permet aux utilisateurs de suivre leurs d\'epenses et leurs revenus,
+de les cat\'egoriser, et de visualiser leur situation financi\`ere \`a travers un
+tableau de bord interactif. Une couche d'administration permet la gestion des
+utilisateurs et la consultation de statistiques globales. La qualit\'e du syst\`eme
+est assur\'ee gr\^ace \`a \textbf{Robot Framework}, utilis\'e pour les tests
+fonctionnels automatis\'es.
+
+La mod\'elisation du projet a \'et\'e r\'ealis\'ee selon les standards UML, \`a
+travers plusieurs diagrammes~: cas d'utilisation, classes, s\'equence, activit\'e,
+\'etat-transition et paquetage.
+
+\textbf{Mots-cl\'es~:} Laravel, Vue.js, Robot Framework, gestion financi\`ere,
+API REST, UML, application web.
+
+% -------- Résumé détaillé --------
+\newpage
+\thispagestyle{empty}
+\phantomsection
+\addcontentsline{toc}{section}{R\'esum\'e d\'etaill\'e}
+\vspace*{3cm}
+\begin{center}
+    {\LARGE \textbf{R\'esum\'e d\'etaill\'e}}
+\end{center}
+\vspace{2cm}
+
+Ce rapport d\'ecrit le d\'eveloppement de \textbf{Budgefy}, une application web de
+gestion financi\`ere personnelle. Le projet s'appuie sur une architecture moderne qui
+associe \textbf{Laravel} comme framework backend et \textbf{Vue.js} pour la conception
+de l'interface utilisateur dynamique. La communication entre ces deux couches est
+assur\'ee par une API RESTful, garantissant une s\'eparation nette des responsabilit\'es
+et une meilleure maintenabilit\'e de l'ensemble du syst\`eme.
+
+L'application offre \`a chaque utilisateur la possibilit\'e de suivre ses d\'epenses
+et ses revenus, de les organiser par cat\'egories, et de visualiser l'\'evolution de
+sa situation financi\`ere \`a travers un tableau de bord interactif. Un espace
+d'administration permet de g\'erer les comptes utilisateurs et de consulter des
+statistiques globales sur l'utilisation de la plateforme. La qualit\'e du syst\`eme
+est garantie par l'utilisation de \textbf{Robot Framework}, d\'edi\'e \`a
+l'automatisation des tests fonctionnels.
+
+La mod\'elisation du projet respecte les standards du langage UML et s'appuie sur
+six types de diagrammes~: les diagrammes des cas d'utilisation, de classes, de
+s\'equence, d'activit\'e, \'etat-transition et de paquetage.
+
+\textbf{Mots-cl\'es~:} Laravel, Vue.js, Robot Framework, gestion financi\`ere
+personnelle, API REST, UML, application web full-stack.
+
+%------------------ Table des matières --------
+\newpage
+\tabledematieres
+
+%------------------ Liste des figures ---------
+\newpage
+\listoffigures
+
+%------------------ Introduction --------------
+\newpage
+\thispagestyle{empty}
+\phantomsection
+\addcontentsline{toc}{section}{Introduction g\'en\'erale}
+\vspace*{3cm}
+\begin{center}
+    {\LARGE \textbf{Introduction g\'en\'erale}}
+\end{center}
+\vspace{2cm}
+
+Dans un contexte \'economique o\`u la ma\^itrise des finances personnelles est devenue
+un enjeu du quotidien, les outils num\'eriques jouent un r\^ole croissant pour aider
+les individus \`a mieux g\'erer leur argent. Pourtant, nombreuses sont les personnes
+qui peinent encore \`a avoir une vision claire de leurs entr\'ees et sorties financi\`eres,
+faute d'un outil adapt\'e, intuitif et accessible.
+
+C'est dans cette perspective que s'inscrit le projet \textbf{Budgefy}, une application
+web de gestion financi\`ere personnelle pens\'ee pour r\'epondre pr\'ecis\'ement \`a
+ce besoin. L'objectif est de fournir \`a chaque utilisateur un espace centralis\'e pour
+enregistrer ses d\'epenses et ses revenus, les organiser par cat\'egories, et suivre
+l'\'evolution de sa situation financi\`ere en temps r\'eel.
+
+Sur le plan technique, le projet met en \oe uvre une architecture full-stack moderne~:
+\textbf{Laravel} est utilis\'e c\^ot\'e serveur pour la gestion des donn\'ees et la
+logique m\'etier, tandis que \textbf{Vue.js} assure une exp\'erience utilisateur fluide
+et r\'eactive c\^ot\'e client. Les deux couches communiquent via une API RESTful. La
+qualit\'e du syst\`eme est assur\'ee par des tests automatis\'es r\'ealis\'es avec
+\textbf{Robot Framework}.
+
+Ce rapport est structur\'e en quatre chapitres. Le premier chapitre pr\'esente le
+contexte g\'en\'eral du projet et ses objectifs. Le deuxi\`eme chapitre est consacr\'e
+\`a la conception et \`a la mod\'elisation UML du syst\`eme. Le troisi\`eme chapitre
+d\'ecrit la m\'ethodologie adopt\'ee et les choix technologiques retenus. Enfin, le
+quatri\`eme chapitre pr\'esente la r\'ealisation concr\`ete de l'application.
+
+
+%------------------ Chapitre 1 ----------------
+\newpage
+\phantomsection
+\addcontentsline{toc}{section}{Chapitre 1 -- Contexte g\'en\'eral du projet}
+\vspace*{3cm}
+\begin{center}
+    {\Huge \textbf{Chapitre 1}}\\[0.5cm]
+    {\LARGE \textbf{Contexte g\'en\'eral du projet}}
+\end{center}
+\vspace{2cm}
+
+\begin{center}
+    \textbf{R\'esum\'e du chapitre}
+\end{center}
+\begin{center}
+    \fbox{%
+        \begin{minipage}{0.85\textwidth}
+            \small
+            Ce chapitre introduit le cadre g\'en\'eral du projet Budgefy. Il pr\'esente
+            la probl\'ematique qui a motiv\'e sa r\'ealisation, les objectifs vis\'es,
+            ainsi qu'une vue d'ensemble des fonctionnalit\'es attendues de l'application.
+        \end{minipage}
+    }
+\end{center}
+
+\newpage
+\setcounter{section}{0}
+\renewcommand{\thesection}{1.\arabic{section}}
+
+\section{Introduction}
+
+La gestion financi\`ere personnelle est un d\'efi auquel font face de nombreux individus
+au quotidien. Sans outils adapt\'es, il est difficile de suivre pr\'ecis\'ement ses
+d\'epenses, d'anticiper ses besoins futurs ou d'identifier ses habitudes de consommation.
+Les solutions existantes sont souvent trop complexes, trop co\^uteuses ou peu adapt\'ees
+aux besoins r\'eels des utilisateurs.
+
+Le projet \textbf{Budgefy} na\^it de ce constat. Il s'agit d'une application web simple,
+intuitive et efficace, permettant \`a tout utilisateur de tenir un suivi rigoureux de ses
+finances personnelles. Elle vise \`a offrir une alternative accessible aux tableurs classiques
+et aux logiciels de comptabilit\'e professionnels.
+
+\section{Probl\'ematique}
+
+La probl\'ematique centrale de ce projet peut \^etre formul\'ee de la mani\`ere suivante~:
+\textit{comment concevoir une application web ergonomique et s\'ecuris\'ee permettant \`a
+un utilisateur non-expert de g\'erer efficacement ses finances personnelles~?}
+
+Cette question soul\`eve plusieurs sous-probl\`emes~:
+\begin{itemize}
+    \item Comment mod\'eliser et stocker de mani\`ere fiable les donn\'ees financi\`eres des utilisateurs~?
+    \item Comment offrir une interface claire permettant une prise en main rapide~?
+    \item Comment assurer la s\'eparation des r\^oles entre utilisateurs et administrateurs~?
+    \item Comment garantir la qualit\'e et la robustesse du syst\`eme via des tests automatis\'es~?
+\end{itemize}
+
+\section{Objectifs du projet}
+
+Le projet Budgefy vise \`a atteindre les objectifs suivants~:
+\begin{itemize}
+    \item Permettre \`a chaque utilisateur d'enregistrer, modifier et supprimer ses d\'epenses et revenus.
+    \item Proposer un syst\`eme de cat\'egorisation des transactions pour une meilleure lisibilit\'e.
+    \item Offrir un tableau de bord synth\'etique pr\'esentant les statistiques financi\`eres de l'utilisateur.
+    \item Mettre en place un espace d'administration pour la gestion des comptes utilisateurs.
+    \item Assurer la s\'ecurit\'e des donn\'ees gr\^ace \`a un syst\`eme d'authentification robuste.
+    \item Automatiser les tests fonctionnels pour garantir la fiabilit\'e du syst\`eme.
+\end{itemize}
+
+\section{Pr\'esentation du syst\`eme}
+
+Budgefy est une application web \`a destination du grand public. Elle repose sur une
+architecture client-serveur~: le frontend Vue.js communique avec le backend Laravel via
+une API REST s\'ecuris\'ee. Les donn\'ees sont persist\'ees dans une base de donn\'ees
+relationnelle MySQL.
+
+Deux types d'acteurs interagissent avec le syst\`eme~:
+\begin{itemize}
+    \item \textbf{L'utilisateur standard}~: il g\`ere ses propres donn\'ees financi\`eres
+          (d\'epenses, revenus, cat\'egories, profil).
+    \item \textbf{L'administrateur}~: il supervise les comptes utilisateurs et
+          consulte les statistiques globales.
+\end{itemize}
+
+\section{Conclusion}
+
+Ce chapitre a permis de poser les bases du projet Budgefy en pr\'esentant son contexte,
+sa probl\'ematique et ses objectifs. Le chapitre suivant sera consacr\'e \`a la conception
+et \`a la mod\'elisation UML du syst\`eme.
+
+%------------------ Chapitre 2 ----------------
+\newpage
+\phantomsection
+\addcontentsline{toc}{section}{Chapitre 2 -- Conception et Mod\'elisation UML}
+\vspace*{3cm}
+\begin{center}
+    {\Huge \textbf{Chapitre 2}}\\[0.5cm]
+    {\LARGE \textbf{Conception et Mod\'elisation UML}}
+\end{center}
+\vspace{2cm}
+
+\begin{center}
+    \textbf{R\'esum\'e du chapitre}
+\end{center}
+\begin{center}
+    \fbox{%
+        \begin{minipage}{0.85\textwidth}
+            \small
+            Ce chapitre est consacr\'e \`a la mod\'elisation UML du syst\`eme Budgefy.
+            Il pr\'esente les six diagrammes utilis\'es pour formaliser l'architecture
+            statique et le comportement dynamique de l'application, accompagn\'es chacun
+            d'une d\'efinition et d'une description de leur application au projet.
+        \end{minipage}
+    }
+\end{center}
+
+\newpage
+\setcounter{section}{0}
+\renewcommand{\thesection}{2.\arabic{section}}
+
+\begin{figure}
+    \includegraphics{uml-logo.png}
+\end{figure}
+\section{Introduction}
+La mod\'elisation est une \'etape fondamentale dans tout projet de d\'eveloppement
+logiciel. Elle permet de formaliser les besoins, de d\'efinir l'architecture du syst\`eme
+et d'anticiper les interactions entre ses composants avant d'entamer la phase de
+d\'eveloppement. Pour ce projet, nous avons utilis\'e le langage
+\textbf{UML (Unified Modeling Language)} \cite{uml}, qui constitue le standard de
+facto en ing\'enierie logicielle pour la repr\'esentation visuelle des syst\`emes.
+
+Six types de diagrammes ont \'et\'e produits, couvrant aussi bien la vision statique
+(structure) que la vision dynamique (comportement) du syst\`eme.
+
+\section{Diagramme des cas d'utilisation}
+
+\subsection{D\'efinition}
+
+Le diagramme des cas d'utilisation est l'un des diagrammes comportementaux d'UML
+\cite{uml}. Il permet de repr\'esenter les interactions entre les acteurs externes
+(utilisateurs ou syst\`emes tiers) et les fonctionnalit\'es offertes par le syst\`eme.
+Chaque cas d'utilisation d\'ecrit une s\'equence d'actions r\'ealis\'ee par un acteur
+pour atteindre un objectif particulier. Ce diagramme est particuli\`erement utile en
+phase d'analyse des besoins, car il offre une vue globale et accessible du p\'erim\`etre
+fonctionnel du syst\`eme \cite{pressman}.
+
+\subsection{Application au projet Budgefy}
+
+Le syst\`eme de gestion financi\`ere Budgefy implique deux acteurs principaux~:
+l'\textbf{utilisateur standard} et l'\textbf{administrateur}. L'utilisateur peut
+s'inscrire, se connecter, g\'erer ses cat\'egories, ses d\'epenses, ses revenus,
+consulter son tableau de bord et modifier son profil. L'administrateur, qui h\'erite
+des droits de l'utilisateur, dispose en plus de la capacit\'e de g\'erer les comptes
+utilisateurs et de consulter les statistiques globales du syst\`eme. La relation
+\textit{<<include>>} indique que l'authentification est un pr\'erequis indispensable
+\`a toute action.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\linewidth]{cas d'utilisation.png}
+    \caption{Diagramme des cas d'utilisation --- Syst\`eme de Gestion Financi\`ere Budgefy}
+    \label{fig:cas-utilisation}
+\end{figure}
+
+\section{Diagramme de classes}
+
+\subsection{D\'efinition}
+
+Le diagramme de classes est le diagramme structurel central d'UML \cite{uml}. Il d\'ecrit
+la structure statique du syst\`eme en repr\'esentant les classes qui le composent, leurs
+attributs, leurs m\'ethodes et les relations qui les unissent (associations, agr\'egations,
+compositions, h\'eritages). Il sert de fondement \`a la conception de la base de donn\'ees
+et \`a l'organisation du code source \cite{pressman}.
+
+\subsection{Application au projet Budgefy}
+
+Le mod\`ele de donn\'ees de Budgefy s'articule autour de cinq classes principales.
+La classe \textbf{Utilisateur} est au centre du mod\`ele~: elle peut cr\'eer des
+cat\'egories, ajouter des d\'epenses et des revenus. La classe \textbf{Administrateur}
+h\'erite de la classe Utilisateur et dispose de m\'ethodes suppl\'ementaires pour la
+gestion des comptes. La classe \textbf{D\'epense} est associ\'ee \`a une ou plusieurs
+\textbf{Cat\'egories}, et la classe \textbf{Revenu} est directement li\'ee \`a
+l'utilisateur.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\linewidth]{digramme classe.png}
+    \caption{Diagramme de classes --- Budgefy}
+    \label{fig:diagramme-classes}
+\end{figure}
+
+\section{Diagramme de s\'equence}
+
+\subsection{D\'efinition}
+
+Le diagramme de s\'equence est un diagramme d'interaction UML qui d\'ecrit l'ordre
+temporel des messages \'echang\'es entre les diff\'erents objets ou composants d'un
+syst\`eme lors de l'ex\'ecution d'un sc\'enario pr\'ecis \cite{uml}. Il repr\'esente
+les interactions de mani\`ere chronologique, de haut en bas, et permet de visualiser
+clairement le flux de contr\^ole entre les entit\'es participantes. Il est
+particuli\`erement adapt\'e pour mod\'eliser des cas d'utilisation complexes impliquant
+plusieurs couches applicatives \cite{pressman}.
+
+\subsection{Application au projet Budgefy}
+
+Le diagramme de s\'equence pr\'esent\'e illustre le sc\'enario d'ajout d'une d\'epense
+par un utilisateur. Il implique cinq entit\'es~: l'\textbf{Utilisateur},
+l'\textbf{Interface Web} (frontend Vue.js), le \textbf{ControleurDepense},
+le \textbf{ServiceDepense} et la \textbf{BaseDeDonnees}. Apr\`es saisie des donn\'ees,
+le frontend soumet la requ\^ete au contr\^oleur, qui d\'el\`egue la validation au service.
+Si le montant est valide, la d\'epense est enregistr\'ee en base et une confirmation est
+retourn\'ee \`a l'utilisateur. Dans le cas contraire, un message d'erreur est affich\'e.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{digramme sequence.png}
+    \caption{Diagramme de s\'equence --- Ajout d'une d\'epense}
+    \label{fig:diagramme-sequence}
+\end{figure}
+
+\section{Diagramme d'activit\'e}
+
+\subsection{D\'efinition}
+
+Le diagramme d'activit\'e est un diagramme comportemental UML qui mod\'elise le flux
+d'activit\'es au sein d'un processus \cite{uml}. Il est similaire \`a un organigramme,
+mais offre des constructions suppl\'ementaires telles que les \textit{swimlanes}
+(couloirs de responsabilit\'e), les d\'ecisions, les fusions et les fourches. Il est
+particuli\`erement utilis\'e pour d\'ecrire des processus m\'etier, des algorithmes ou
+des flux de travail impliquant plusieurs acteurs ou syst\`emes \cite{pressman}.
+
+\subsection{Application au projet Budgefy}
+
+Le diagramme d'activit\'e ci-dessous repr\'esente le processus d'ajout d'une d\'epense,
+r\'eparti entre deux swimlanes~: l'\textbf{Utilisateur} et le \textbf{Syst\`eme}.
+L'utilisateur saisit les donn\'ees et soumet le formulaire. Le syst\`eme valide les
+donn\'ees re\c{c}ues~: si le montant est positif, la d\'epense est enregistr\'ee en base,
+associ\'ee \`a une cat\'egorie, puis le tableau de bord est mis \`a jour et un message
+de succ\`es est affich\'e. Si le montant est invalide, un message d'erreur est retourn\'e.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{Diagramme d'activité – Ajouter une dépense.png}
+    \caption{Diagramme d'activit\'e --- Ajouter une d\'epense}
+    \label{fig:diagramme-activite}
+\end{figure}
+
+\section{Diagramme \'etat-transition}
+
+\subsection{D\'efinition}
+
+Le diagramme \'etat-transition (ou diagramme de machine \`a \'etats) est un diagramme
+comportemental UML qui mod\'elise les diff\'erents \'etats qu'un objet peut traverser
+au cours de son cycle de vie, ainsi que les transitions permettant de passer d'un \'etat
+\`a un autre en r\'eponse \`a des \'ev\'enements ou des conditions particuli\`eres
+\cite{uml}. Il permet de d\'ecrire pr\'ecis\'ement les actions r\'ealis\'ees \`a
+l'entr\'ee, pendant et \`a la sortie de chaque \'etat \cite{pressman}.
+
+\subsection{Application au projet Budgefy}
+
+Le cycle de vie d'une d\'epense dans Budgefy passe par plusieurs \'etats. \`A sa
+cr\'eation, elle est \`a l'\'etat \textbf{Brouillon}. Une fois soumise, elle entre
+dans l'\'etat \textbf{Soumission} en attente de validation. Selon le r\'esultat de
+la v\'erification du montant, elle passe soit \`a l'\'etat \textbf{Valid\'ee} (montant
+sup\'erieur \`a z\'ero), soit \`a l'\'etat \textbf{Rejet\'ee} (montant invalide),
+auquel cas elle peut \^etre corrig\'ee et renvoy\'ee. \`A partir de l'\'etat Valid\'ee,
+la d\'epense peut \^etre modifi\'ee ou supprim\'ee.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{Diagramme état-transition.png}
+    \caption{Diagramme \'etat-transition --- Cycle de vie d'une D\'epense}
+    \label{fig:diagramme-etat}
+\end{figure}
+
+\section{Diagramme de paquetage}
+
+\subsection{D\'efinition}
+
+Le diagramme de paquetage est un diagramme structurel UML qui organise les \'el\'ements
+du syst\`eme en groupes logiques appel\'es paquetages \cite{uml}. Il permet de visualiser
+l'architecture modulaire d'un syst\`eme, les d\'ependances entre ses diff\'erents modules
+et la r\'epartition des responsabilit\'es. Ce diagramme est particuli\`erement utile pour
+repr\'esenter l'architecture en couches d'une application \cite{pressman}.
+
+\subsection{Application au projet Budgefy}
+
+L'architecture de Budgefy s'organise en plusieurs couches distinctes. La couche
+\textbf{Gestion d'Interface} regroupe les pages et formulaires. La couche
+\textbf{Gestion d'Actions} contient les contr\^oleurs. La couche \textbf{Gestion Services}
+encapsule la logique m\'etier. La couche \textbf{Gestion mod\`ele} contient les entit\'es
+du domaine. La couche \textbf{Gestion r\'epertoires} repr\'esente les repositories
+d'acc\`es aux donn\'ees. Enfin, la couche \textbf{Base de donn\'ees} g\`ere la persistance.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{package diagram.png}
+    \caption{Diagramme de paquetage --- Architecture de Budgefy}
+    \label{fig:diagramme-paquetage}
+\end{figure}
+
+\section{Conclusion}
+
+Ce chapitre a pr\'esent\'e l'ensemble des diagrammes UML produits dans le cadre du projet
+Budgefy. Ces mod\`eles constituent une base solide pour guider le d\'eveloppement et assurer
+la coh\'erence entre les besoins exprim\'es et les choix techniques.
+
+%------------------ Chapitre 3 ----------------
+\newpage
+\phantomsection
+\addcontentsline{toc}{section}{Chapitre 3 -- M\'ethodologie et choix technologiques}
+\vspace*{3cm}
+\begin{center}
+    {\Huge \textbf{Chapitre 3}}\\[0.5cm]
+    {\LARGE \textbf{M\'ethodologie et choix technologiques}}
+\end{center}
+\vspace{2cm}
+
+\begin{center}
+    \textbf{R\'esum\'e du chapitre}
+\end{center}
+\begin{center}
+    \fbox{%
+        \begin{minipage}{0.85\textwidth}
+            \small
+            Ce chapitre d\'ecrit la d\'emarche m\'ethodologique adopt\'ee pour la conduite
+            du projet, ainsi que les technologies et outils choisis pour le d\'eveloppement
+            de l'application Budgefy.
+        \end{minipage}
+    }
+\end{center}
+
+\newpage
+\setcounter{section}{0}
+\renewcommand{\thesection}{3.\arabic{section}}
+
+\section{Introduction}
+
+Tout projet de d\'eveloppement logiciel n\'ecessite une approche m\'ethodologique structur\'ee
+ainsi que des choix technologiques coh\'erents avec les objectifs vis\'es. Nous pr\'esentons
+ici la d\'emarche adopt\'ee pour piloter le d\'eveloppement de Budgefy, ainsi que les
+technologies retenues pour chacune des couches de l'application.
+
+\section{M\'ethodologie de d\'eveloppement}
+
+Pour ce projet, nous avons adopt\'e une approche inspir\'ee des m\'ethodes agiles \cite{agile},
+plus particuli\`erement du mod\`ele \textbf{Scrum all\'eg\'e}. Le travail a \'et\'e
+organis\'e en it\'erations successives (sprints), chacune aboutissant \`a un incr\'ement
+fonctionnel de l'application.
+
+Les grandes \'etapes du projet ont \'et\'e les suivantes~:
+\begin{enumerate}
+    \item Analyse des besoins et d\'efinition du p\'erim\`etre fonctionnel.
+    \item Conception UML et architecture technique.
+    \item D\'eveloppement du backend avec Laravel.
+    \item D\'eveloppement du frontend avec Vue.js.
+    \item Int\'egration et tests automatis\'es avec Robot Framework.
+    \item Corrections et mise au point finale.
+\end{enumerate}
+
+\section{Pr\'esentation des technologies utilis\'ees}
+
+\subsection{Laravel --- Backend}
+\begin{wrapfigure}{l}{0.15\textwidth}
+    \includegraphics[width=0.75\linewidth]{laravel-logo.png}
+\end{wrapfigure}
+\textbf{Laravel} \cite{laravel} est un framework PHP open-source, cr\'e\'e par Taylor
+Otwell en 2011. Il suit le patron architectural \textbf{MVC (Mod\`ele-Vue-Contr\^oleur)}
+et offre un ensemble riche de fonctionnalit\'es~: routage avanc\'e, ORM Eloquent,
+syst\`eme de migrations, gestion des sessions et authentification int\'egr\'ee.
+
+Dans le cadre de Budgefy, Laravel expose une API RESTful consomm\'ee par le frontend
+Vue.js et g\`ere l'ensemble de la logique m\'etier ainsi que la persistance des donn\'ees
+via Eloquent ORM.
+
+\subsection{Vue.js --- Frontend}
+\begin{wrapfigure}{l}{0.15\textwidth}
+        \includegraphics[width=0.75\linewidth]{vue-logo.png}
+\end{wrapfigure}
+\textbf{Vue.js} \cite{vuejs} est un framework JavaScript progressif, d\'evelopp\'e par
+Evan You et publi\'e en 2014. Il repose sur une architecture orient\'ee composants et
+int\`egre un syst\`eme de r\'eactivit\'e qui met automatiquement \`a jour le DOM
+lorsque les donn\'ees changent. Dans Budgefy, Vue.js est responsable de l'ensemble de
+l'interface utilisateur.
+
+\subsection{Robot Framework --- Tests automatis\'es}
+
+\textbf{Robot Framework} \cite{robot} est un framework open-source d'automatisation des
+tests d\'evelopp\'e en Python. Il adopte une approche orient\'ee mots-cl\'es
+(\textit{keyword-driven testing}), largement utilis\'ee pour les tests d'acceptation et
+les tests fonctionnels de bout en bout. Dans ce projet, il est utilis\'e pour simuler
+les interactions utilisateur et v\'erifier la conformit\'e du syst\`eme.
+
+\subsection{Autres outils}
+
+\begin{itemize}
+    \item \textbf{MySQL} \cite{mysql}~: syst\`eme de gestion de bases de donn\'ees relationnelles.
+    \item \textbf{Git / GitHub}~: outil de gestion de versions et plateforme de collaboration.
+    \item \textbf{Postman}~: outil de test et de documentation des API REST.
+    \item \textbf{Visual Studio Code}~: environnement de d\'eveloppement int\'egr\'e principal.
+    \item \textbf{Laravel Sanctum} \cite{laravel-sanctum}~: module d'authentification par token.
+\end{itemize}
+
+\section{Architecture g\'en\'erale du syst\`eme}
+
+L'architecture de Budgefy suit le mod\`ele \textbf{client-serveur d\'ecouple} \cite{restapi}.
+Le frontend Vue.js et le backend Laravel sont deux applications distinctes qui communiquent
+exclusivement via une API REST en JSON. Le backend est organis\'e en couches~:
+\textit{contr\^oleurs}, \textit{services}, \textit{repositories} et \textit{mod\`eles} Eloquent.
+
+\section{Conclusion}
+
+Ce chapitre a pr\'esent\'e la m\'ethodologie de d\'eveloppement adopt\'ee ainsi que les
+technologies qui constituent le socle technique de Budgefy. Le chapitre suivant pr\'esentera
+la r\'ealisation concr\`ete de l'application.
+
+%------------------ Chapitre 4 ----------------
+\newpage
+\phantomsection
+\addcontentsline{toc}{section}{Chapitre 4 -- R\'ealisation}
+\vspace*{3cm}
+\begin{center}
+    {\Huge \textbf{Chapitre 4}}\\[0.5cm]
+    {\LARGE \textbf{R\'ealisation}}
+\end{center}
+\vspace{2cm}
+
+\begin{center}
+    \textbf{R\'esum\'e du chapitre}
+\end{center}
+\begin{center}
+    \fbox{%
+        \begin{minipage}{0.85\textwidth}
+            \small
+            Ce chapitre pr\'esente les r\'esultats concrets du d\'eveloppement de
+            l'application Budgefy. Il d\'ecrit les principales fonctionnalit\'es
+            impl\'ement\'ees et les tests effectu\'es pour valider le bon fonctionnement
+            du syst\`eme.
+        \end{minipage}
+    }
+\end{center}
+
+\newpage
+\setcounter{section}{0}
+\renewcommand{\thesection}{4.\arabic{section}}
+
+\section{Introduction}
+
+Cette section pr\'esente la mise en \oe uvre concr\`ete du projet Budgefy. Apr\`es
+les phases de conception et de planification d\'ecrites dans les chapitres pr\'ec\'edents.
+
+\section{Fonctionnalit\'es d\'evelopp\'ees}
+
+\subsection{Authentification des utilisateurs}
+\begin{figure}[h]
+    \includegraphics[width=1\linewidth]{login.png}
+\end{figure}
+Cette fonctionnalité permet aux utilisateurs d’accéder de manière sécurisée à la plateforme Budgefy grâce à un système complet d’authentification. L’interface propose une connexion simple et intuitive à l’aide d’une adresse e-mail et d’un mot de passe.
+
+Le système inclut également une fonctionnalité de création de compte permettant aux nouveaux utilisateurs de s’inscrire facilement à l’application. Une option « Se souvenir de moi » est disponible afin de maintenir la session active pour une meilleure expérience utilisateur.
+
+Pour renforcer l’accessibilité et la flexibilité, l’application prend aussi en charge l’authentification via des services externes tels que Google et Apple. De plus, une fonctionnalité de récupération de mot de passe permet aux utilisateurs de réinitialiser leurs identifiants en cas d’oubli.
+
+Cette fonctionnalité garantit la sécurité des données personnelles et financières des utilisateurs tout en offrant une expérience de connexion fluide et moderne.
+\par
+En complément, le système d'authentification intègre plusieurs mécanismes de sécurité et d'ergonomie :
+\begin{itemize}
+    \item \textbf{Vérification par e-mail :} Lors de l'inscription, un e-mail de confirmation est envoyé contenant un lien d'activation. Le compte reste inactif tant que l'utilisateur n'a pas confirmé son adresse, ce qui réduit les inscriptions frauduleuses et assure la véracité des contacts.
+    \item \textbf{Authentification à deux facteurs (2FA) :} Les utilisateurs peuvent activer la 2FA (par application TOTP comme Google Authenticator ou via SMS) pour renforcer la sécurité de leur compte. Après saisie du mot de passe, un code à usage unique doit être fourni pour valider la connexion. Des codes de récupération permettent de restaurer l'accès en cas de perte d'appareil.
+    \item \textbf{Connexion via Google :} L'application supporte la connexion OAuth2 avec Google, permettant un enregistrement et une connexion rapides tout en récupérant une adresse e-mail vérifiée. Les utilisateurs peuvent lier un compte Google existant à leur profil Budgefy, et les jetons d'authentification sont gérés de manière sécurisée côté serveur.
+\end{itemize}
+
+Ces fonctionnalités améliorent la sécurité et l'expérience utilisateur en proposant des options adaptées aux besoins et aux niveaux de confiance de chacun.
+\subsection{Gestion de transactions}
+\begin{figure}[ht]
+    \includegraphics[width=1\linewidth]{depence-revenue.png}
+\end{figure}
+Cette fonctionnalité permet à l’utilisateur de gérer efficacement l’ensemble de ses transactions financières à travers une interface moderne et intuitive. Elle offre une vue globale des revenus, des dépenses ainsi que du solde net afin de faciliter le suivi budgétaire en temps réel.
+L’interface affiche une liste détaillée des transactions avec plusieurs informations importantes telles que la date, la catégorie, la description, le statut et le montant associé. Chaque transaction peut être modifiée ou supprimée grâce aux actions disponibles dans le tableau.
+Le système intègre également des fonctionnalités de filtrage permettant d’afficher les transactions selon leur type (revenus ou dépenses), leur catégorie ou encore leur période temporelle. Une barre de recherche facilite aussi la localisation rapide d’une transaction spécifique.
+Cette fonctionnalité contribue à une meilleure organisation financière en permettant à l’utilisateur d’analyser ses habitudes de dépenses et de revenus de manière claire et structurée.
+\subsection{Gestion des cat\'egories}
+\begin{figure}[h]
+    \includegraphics[width=1\linewidth]{categorie.png}
+\end{figure}
+
+Cette fonctionnalité permet à l’utilisateur d’organiser ses transactions financières à travers un système de catégories personnalisé. Chaque catégorie représente un type spécifique de revenu ou de dépense, ce qui facilite le classement et l’analyse des opérations financières.
+
+L’interface affiche l’ensemble des catégories disponibles sous forme de cartes contenant le nom, l’icône associée ainsi que le nombre de transactions liées à chaque catégorie. L’utilisateur peut ajouter de nouvelles catégories afin d’adapter l’application à ses besoins personnels.
+
+Le système offre également des options de filtrage permettant d’afficher toutes les catégories ou uniquement celles contenant des transactions. Cette organisation améliore la lisibilité des données financières et permet un meilleur suivi des habitudes de consommation.
+
+Grâce à cette fonctionnalité, l’utilisateur bénéficie d’une gestion budgétaire plus structurée et d’une analyse plus claire de ses revenus et dépenses.
+
+\subsection{Tableau de bord}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=1\linewidth]{dashboard.png}
+\end{figure}
+Cette fonctionnalité constitue l’interface principale de l’application Budgefy et offre une vue d’ensemble de la situation financière de l’utilisateur. Le tableau de bord centralise les informations essentielles afin de permettre un suivi rapide et efficace des revenus, des dépenses et du solde actuel.
+
+L’interface affiche des indicateurs financiers importants tels que le solde courant, le total des revenus ainsi que le total des dépenses. Ces données sont mises à jour dynamiquement pour fournir une vision claire de l’état budgétaire de l’utilisateur.
+
+Le tableau de bord intègre également des graphiques statistiques permettant de comparer les revenus et les dépenses sur différentes périodes. Une répartition des dépenses par catégorie est aussi présentée afin d’identifier les postes de consommation les plus importants.
+
+Enfin, la section des dernières transactions permet d’accéder rapidement aux opérations récentes effectuées dans l’application. Cette fonctionnalité aide l’utilisateur à analyser ses finances personnelles et à prendre de meilleures décisions budgétaires grâce à des visualisations simples et interactives.
+\subsection{Gestion des paramètres}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=1\linewidth]{settings.png}
+\end{figure}
+Cette fonctionnalité permet à l’utilisateur de personnaliser et de gérer les différents paramètres de son compte ainsi que les préférences de l’application. Elle centralise les options liées au profil, à la sécurité et à l’expérience utilisateur dans une interface claire et organisée.
+
+La section profil permet de consulter et de modifier les informations personnelles telles que le nom, l’adresse e-mail et la photo de profil. Le système offre également des fonctionnalités de mise à jour des informations du compte ainsi que la vérification de l’adresse e-mail.
+
+L’utilisateur peut configurer plusieurs préférences de l’application, notamment la devise principale utilisée pour les transactions, la langue de l’interface ainsi que l’activation du mode sombre pour améliorer le confort visuel.
+\subsection{Interface d'administration}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=1\linewidth]{admin.png}
+\end{figure}
+Cette fonctionnalité permet à l’administrateur de superviser et de gérer l’ensemble de la plateforme Budgefy à travers une interface dédiée à l’administration. Le tableau de bord fournit une vue globale sur les utilisateurs et l’activité de l’application.
+
+L’interface affiche plusieurs indicateurs statistiques importants tels que le nombre total d’utilisateurs, le nombre d’utilisateurs standards, les administrateurs ainsi que les utilisateurs actuellement actifs. Ces informations permettent un suivi rapide de l’état de la plateforme.
+
+Une section dédiée aux utilisateurs actifs permet à l’administrateur de visualiser les personnes connectées récemment ainsi que leur statut de connexion. Cette fonctionnalité facilite le suivi de l’activité en temps réel.
+
+Le système intègre également une fonctionnalité complète de gestion des utilisateurs. L’administrateur peut consulter les informations des comptes, gérer les rôles, ajouter de nouveaux utilisateurs ou supprimer des comptes existants. Les statistiques liées aux transactions et aux catégories créées par chaque utilisateur sont également disponibles.
+
+Cette fonctionnalité garantit une meilleure administration de l’application et facilite le contrôle global du système ainsi que la gestion des accès utilisateurs.\section{Tests automatis\'es avec Robot Framework}
+
+Une suite de tests automatis\'es a \'et\'e d\'evelopp\'ee avec \textbf{Robot Framework}
+\cite{robot}, couvrant les sc\'enarios principaux~: inscription, connexion, ajout d'une
+d\'epense valide, rejet d'une d\'epense invalide et consultation du tableau de bord.
+Chaque test suit la structure \textbf{AAA (Arranger, Agir, Affirmer)}.
+
+\section{R\'esultats obtenus}
+
+L'application Budgefy r\'epond aux objectifs initialement fix\'es. L'ensemble des
+fonctionnalit\'es pr\'evues a \'et\'e impl\'ement\'e et valid\'e par les tests.
+La s\'eparation entre frontend et backend s'est av\'er\'ee b\'en\'efique pour la
+maintenabilit\'e du code et la r\'epartition du travail au sein de l'\'equipe.
+
+\section{Conclusion}
+
+Ce chapitre a pr\'esent\'e la r\'ealisation concr\`ete de l'application Budgefy.
+L'ensemble du travail r\'ealis\'e d\'emontre la faisabilit\'e technique du projet
+et valide les choix de conception effectu\'es en amont.
+
+% -------- Conclusion générale --------
+\newpage
+\phantomsection
+\addcontentsline{toc}{section}{Conclusion g\'en\'erale}
+\vspace*{3cm}
+\begin{center}
+    {\LARGE \textbf{Conclusion g\'en\'erale}}
+\end{center}
+\vspace{2cm}
+
+Ce projet nous a permis de mener \`a bien le d\'eveloppement complet d'une application
+web de gestion financi\`ere personnelle, \textbf{Budgefy}, en mobilisant un ensemble de
+comp\'etences techniques et m\'ethodologiques acquises au cours de notre formation.
+
+Sur le plan technique, nous avons mis en pratique une architecture full-stack moderne,
+associant \textbf{Laravel} pour le backend, \textbf{Vue.js} pour le frontend et
+\textbf{Robot Framework} pour les tests automatis\'es. La mod\'elisation UML r\'ealis\'ee
+en amont a constitu\'e un guide pr\'ecieux tout au long du d\'eveloppement.
+
+Sur le plan personnel, ce projet nous a permis de renforcer notre capacit\'e \`a
+travailler en \'equipe, \`a g\'erer les impr\'evus, et \`a produire un livrable de
+qualit\'e dans un d\'elai contraint.
+
+En perspective, plusieurs am\'eliorations pourraient \^etre envisag\'ees~: l'ajout
+d'alertes budg\'etaires personnalisables, l'export des donn\'ees en PDF ou CSV, ou
+encore le d\'eveloppement d'une version mobile via React Native ou Flutter.
+
+% -------- Références --------
+\newpage
+\phantomsection
+\addcontentsline{toc}{section}{R\'ef\'erences bibliographiques}
+\vspace*{3cm}
+\begin{center}
+    {\LARGE \textbf{R\'ef\'erences bibliographiques}}
+\end{center}
+\vspace{2cm}
+
+\begin{thebibliography}{99}
+
+\bibitem{laravel}
+Taylor Otwell,
+\textit{Laravel: The PHP Framework for Web Artisans}, 2011.
+Disponible en ligne~: \url{https://laravel.com/docs}
+
+\bibitem{vuejs}
+Evan You,
+\textit{Vue.js --- The Progressive JavaScript Framework}, 2014.
+Disponible en ligne~: \url{https://vuejs.org/guide/introduction.html}
+
+\bibitem{robot}
+Robot Framework Foundation,
+\textit{Robot Framework User Guide}, version 6.x.
+Disponible en ligne~: \url{https://robotframework.org/robotframework/latest/RobotFrameworkUserGuide.html}
+
+\bibitem{uml}
+Object Management Group,
+\textit{Unified Modeling Language Specification}, version 2.5.1, 2017.
+Disponible en ligne~: \url{https://www.omg.org/spec/UML/2.5.1}
+
+\bibitem{restapi}
+Roy T. Fielding,
+\textit{Architectural Styles and the Design of Network-based Software Architectures},
+th\`ese de doctorat, University of California, Irvine, 2000.
+
+\bibitem{mysql}
+Oracle Corporation,
+\textit{MySQL 8.0 Reference Manual}.
+Disponible en ligne~: \url{https://dev.mysql.com/doc/refman/8.0/en/}
+
+\bibitem{laravel-sanctum}
+Laravel LLC,
+\textit{Laravel Sanctum Documentation}.
+Disponible en ligne~: \url{https://laravel.com/docs/sanctum}
+
+\bibitem{pressman}
+Roger S. Pressman,
+\textit{Software Engineering: A Practitioner's Approach},
+8\textsuperscript{e}~\'edition, McGraw-Hill, 2014.
+
+\bibitem{agile}
+Ken Schwaber et Jeff Sutherland,
+\textit{The Scrum Guide}, 2020.
+Disponible en ligne~: \url{https://scrumguides.org/scrum-guide.html}
+
+\bibitem{fowler}
+Martin Fowler,
+\textit{UML Distilled: A Brief Guide to the Standard Object Modeling Language},
+3\textsuperscript{e}~\'edition, Addison-Wesley, 2003.
+
+\end{thebibliography}
+
+\end{document}
+remove the footer from all pages

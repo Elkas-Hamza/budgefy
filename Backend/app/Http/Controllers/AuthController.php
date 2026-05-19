@@ -68,10 +68,98 @@ class AuthController extends Controller
             ]);
         }
 
+        // Check if user has 2FA enabled
+        if ($user->two_factor_enabled) {
+            // Generate a 4-digit code
+            $code = str_pad((string) random_int(0, 9999), 4, '0', STR_PAD_LEFT);
+            
+            // Store code with 10-minute expiration
+            $user->two_factor_code = $code;
+            $user->two_factor_code_expires_at = now()->addMinutes(10);
+            $user->save();
+            
+            // Send email with code
+            $user->notify(new \App\Notifications\TwoFactorCodeNotification($code));
+            
+            // Create temporary token for 2FA verification
+            $temporaryToken = Str::random(64);
+            Cache::put("2fa_temp_token:{$temporaryToken}", $user->id, now()->addMinutes(10));
+            
+            return response()->json([
+                'message' => 'Code de verification envoye par email.',
+                'two_factor_required' => true,
+                'temporary_token' => $temporaryToken,
+                'expires_in_minutes' => 10,
+            ], 202);
+        }
+
         $token = $this->issueToken($user->id);
 
         return response()->json([
             'message' => 'Connexion reussie.',
+            'token' => $token,
+            'user' => $user,
+        ]);
+    }
+
+    public function verifyLoginTwoFactorCode(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'code' => ['required', 'string', 'size:4'],
+            'temporary_token' => ['required', 'string'],
+        ]);
+
+        $userId = Cache::get("2fa_temp_token:{$validated['temporary_token']}");
+
+        if (! $userId) {
+            return response()->json([
+                'message' => 'Token temporaire invalide ou expire.',
+            ], 422);
+        }
+
+        $user = User::find($userId);
+
+        if (! $user) {
+            Cache::forget("2fa_temp_token:{$validated['temporary_token']}");
+            return response()->json([
+                'message' => 'Utilisateur introuvable.',
+            ], 422);
+        }
+
+        if (! $user->two_factor_code || ! $user->two_factor_code_expires_at) {
+            return response()->json([
+                'message' => 'Aucun code d\'authentification en attente.',
+            ], 422);
+        }
+
+        if (now()->isAfter($user->two_factor_code_expires_at)) {
+            $user->two_factor_code = null;
+            $user->two_factor_code_expires_at = null;
+            $user->save();
+
+            return response()->json([
+                'message' => 'Le code d\'authentification a expire.',
+            ], 422);
+        }
+
+        if ($user->two_factor_code !== $validated['code']) {
+            return response()->json([
+                'message' => 'Le code d\'authentification est invalide.',
+            ], 422);
+        }
+
+        // Clear the 2FA code and temporary token
+        $user->two_factor_code = null;
+        $user->two_factor_code_expires_at = null;
+        $user->save();
+
+        Cache::forget("2fa_temp_token:{$validated['temporary_token']}");
+
+        // Issue the real auth token
+        $token = $this->issueToken($user->id);
+
+        return response()->json([
+            'message' => 'Authentification reussie.',
             'token' => $token,
             'user' => $user,
         ]);
@@ -313,6 +401,95 @@ class AuthController extends Controller
 
         return response()->json([
             'message' => 'Mot de passe modifie avec succes.',
+        ]);
+    }
+
+    public function enableTwoFactor(Request $request): JsonResponse
+    {
+        /** @var User $user */
+        $user = $request->user();
+
+        if ($user->two_factor_enabled) {
+            return response()->json([
+                'message' => 'L\'authentification deux facteurs est deja activee.',
+            ], 422);
+        }
+
+        $code = str_pad((string) random_int(0, 9999), 4, '0', STR_PAD_LEFT);
+
+        $user->two_factor_code = $code;
+        $user->two_factor_code_expires_at = now()->addMinutes(10);
+        $user->save();
+
+        $user->notify(new \App\Notifications\TwoFactorCodeNotification($code));
+
+        return response()->json([
+            'message' => 'Code d\'authentification envoye par email.',
+            'expires_in_minutes' => 10,
+        ]);
+    }
+
+    public function verifyTwoFactorCode(Request $request): JsonResponse
+    {
+        /** @var User $user */
+        $user = $request->user();
+
+        $validated = $request->validate([
+            'code' => ['required', 'string', 'size:4'],
+        ]);
+
+        if (! $user->two_factor_code || ! $user->two_factor_code_expires_at) {
+            return response()->json([
+                'message' => 'Aucun code d\'authentification en attente.',
+            ], 422);
+        }
+
+        if (now()->isAfter($user->two_factor_code_expires_at)) {
+            $user->two_factor_code = null;
+            $user->two_factor_code_expires_at = null;
+            $user->save();
+
+            return response()->json([
+                'message' => 'Le code d\'authentification a expire.',
+            ], 422);
+        }
+
+        if ($user->two_factor_code !== $validated['code']) {
+            return response()->json([
+                'message' => 'Le code d\'authentification est invalide.',
+            ], 422);
+        }
+
+        $user->two_factor_enabled = true;
+        $user->two_factor_code = null;
+        $user->two_factor_code_expires_at = null;
+        $user->save();
+
+        return response()->json([
+            'message' => 'L\'authentification deux facteurs a ete activee avec succes.',
+            'user' => $user,
+        ]);
+    }
+
+    public function disableTwoFactor(Request $request): JsonResponse
+    {
+        /** @var User $user */
+        $user = $request->user();
+
+        if (! $user->two_factor_enabled) {
+            return response()->json([
+                'message' => 'L\'authentification deux facteurs n\'est pas activee.',
+            ], 422);
+        }
+
+        $user->two_factor_enabled = false;
+        $user->two_factor_code = null;
+        $user->two_factor_code_expires_at = null;
+        $user->save();
+
+        return response()->json([
+            'message' => 'L\'authentification deux facteurs a ete desactivee.',
+            'user' => $user,
         ]);
     }
 

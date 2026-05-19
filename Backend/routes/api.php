@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('auth')->group(function (): void {
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/2fa/verify-login', [AuthController::class, 'verifyLoginTwoFactorCode'])->middleware('throttle:5,1');
     Route::post('/email/verification-link', [AuthController::class, 'requestEmailVerificationLink'])->middleware('throttle:6,1');
     Route::post('/forgot-password', [AuthController::class, 'forgotPassword'])->middleware('throttle:6,1');
     Route::post('/verify-reset-code', [AuthController::class, 'verifyResetCode'])->middleware('throttle:6,1');
@@ -29,6 +30,9 @@ Route::prefix('auth')->group(function (): void {
 Route::middleware('api.token')->prefix('auth')->group(function (): void {
     Route::post('/profile', [AuthController::class, 'updateProfile']);
     Route::post('/change-password', [AuthController::class, 'changePassword']);
+    Route::post('/2fa/enable', [AuthController::class, 'enableTwoFactor'])->middleware('throttle:3,1');
+    Route::post('/2fa/verify', [AuthController::class, 'verifyTwoFactorCode'])->middleware('throttle:5,1');
+    Route::post('/2fa/disable', [AuthController::class, 'disableTwoFactor']);
     Route::post('/account/deletion-request', [AuthController::class, 'requestAccountDeletion'])->middleware('throttle:3,1');
     Route::get('/account/deletion-status', [AuthController::class, 'accountDeletionStatus']);
     Route::delete('/account', [AuthController::class, 'deleteAccount']);

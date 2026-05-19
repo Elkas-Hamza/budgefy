@@ -50,6 +50,17 @@ const passwordDraft = reactive({
   newPasswordConfirmation: '',
 })
 
+const twoFactorDraft = reactive({
+  code: '',
+})
+
+const isTwoFactorDialogOpen = ref(false)
+const isVerifyingTwoFactorCode = ref(false)
+const isSendingTwoFactorCode = ref(false)
+const twoFactorCodeSent = ref(false)
+const twoFactorCodeExpired = ref(false)
+const isDisablingTwoFactor = ref(false)
+
 const preferencesForm = reactive({
   currency: 'EUR',
   language: 'FR',
@@ -168,6 +179,24 @@ const translations = {
     emailVerificationRefresh: 'Verifier le statut',
     emailVerifiedBadge: 'Email verifie',
     errEmailVerificationSend: "Impossible d'envoyer l'email de verification.",
+    twoFactorEnable: 'Activer',
+    twoFactorDisable: 'Desactiver',
+    disabled: 'Desactive',
+    twoFactorSetupTitle: 'Activer l\'authentification deux facteurs',
+    twoFactorSetupDescription: 'Un code a quatre chiffres sera envoye a votre adresse email.',
+    twoFactorEnableSending: 'Envoi du code en cours...',
+    twoFactorVerifyTitle: 'Verifier le code',
+    twoFactorVerifyDescription: 'Entrez le code a quatre chiffres que vous avez recu par email.',
+    twoFactorCodeLabel: 'Code a quatre chiffres',
+    twoFactorVerifyCode: 'Verifier le code',
+    twoFactorCodeExpiredNotice: 'Le code a expire. Demander un nouveau code.',
+    twoFactorEnabledSuccess: 'L\'authentification deux facteurs a ete activee avec succes.',
+    twoFactorDisabledSuccess: 'L\'authentification deux facteurs a ete desactivee.',
+    errTwoFactorEnable: 'Impossible d\'activer l\'authentification deux facteurs.',
+    errTwoFactorVerify: 'Le code est invalide.',
+    errTwoFactorDisable: 'Impossible de desactiver l\'authentification deux facteurs.',
+    errTwoFactorCodeRequired: 'Le code est obligatoire.',
+    errTwoFactorCodeInvalid: 'Le code doit contenir exactement 4 chiffres.',
   },
   EN: {
     navDashboard: 'Dashboard',
@@ -276,6 +305,24 @@ const translations = {
     emailVerificationRefresh: 'Check status',
     emailVerifiedBadge: 'Email verified',
     errEmailVerificationSend: 'Unable to send verification email.',
+    twoFactorEnable: 'Enable',
+    twoFactorDisable: 'Disable',
+    disabled: 'Disabled',
+    twoFactorSetupTitle: 'Enable two-factor authentication',
+    twoFactorSetupDescription: 'A four-digit code will be sent to your email address.',
+    twoFactorEnableSending: 'Sending code...',
+    twoFactorVerifyTitle: 'Verify code',
+    twoFactorVerifyDescription: 'Enter the four-digit code you received by email.',
+    twoFactorCodeLabel: 'Four-digit code',
+    twoFactorVerifyCode: 'Verify code',
+    twoFactorCodeExpiredNotice: 'Code has expired. Request a new code.',
+    twoFactorEnabledSuccess: 'Two-factor authentication has been enabled successfully.',
+    twoFactorDisabledSuccess: 'Two-factor authentication has been disabled.',
+    errTwoFactorEnable: 'Unable to enable two-factor authentication.',
+    errTwoFactorVerify: 'Code is invalid.',
+    errTwoFactorDisable: 'Unable to disable two-factor authentication.',
+    errTwoFactorCodeRequired: 'Code is required.',
+    errTwoFactorCodeInvalid: 'Code must contain exactly 4 digits.',
   },
   AR: {
     navDashboard: 'لوحة التحكم',
@@ -504,6 +551,153 @@ const closeDeleteDialog = () => {
 
   isDeletionCompleted.value = false
   isDeleteDialogOpen.value = false
+}
+
+const openTwoFactorDialog = () => {
+  isTwoFactorDialogOpen.value = true
+  twoFactorCodeSent.value = false
+  twoFactorCodeExpired.value = false
+  twoFactorDraft.code = ''
+}
+
+const closeTwoFactorDialog = () => {
+  if (isSendingTwoFactorCode.value || isVerifyingTwoFactorCode.value) {
+    return
+  }
+
+  isTwoFactorDialogOpen.value = false
+  twoFactorCodeSent.value = false
+  twoFactorCodeExpired.value = false
+  twoFactorDraft.code = ''
+}
+
+const sendTwoFactorCode = async () => {
+  isSendingTwoFactorCode.value = true
+
+  try {
+    const response = await fetch('/api/auth/2fa/enable', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+      },
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      throw new Error(data.message)
+    }
+
+    twoFactorCodeSent.value = true
+    showToast({
+      title: t('successPasswordChanged'),
+      message: data.message,
+      type: 'success',
+    })
+
+    setTimeout(() => {
+      twoFactorCodeExpired.value = true
+    }, 600000) // 10 minutes
+  } catch (error) {
+    showToast({
+      title: t('error'),
+      message: error.message || t('errTwoFactorEnable'),
+      type: 'error',
+    })
+  } finally {
+    isSendingTwoFactorCode.value = false
+  }
+}
+
+const verifyTwoFactorCode = async () => {
+  if (!twoFactorDraft.code || twoFactorDraft.code.length !== 4) {
+    showToast({
+      title: t('error'),
+      message: t('errTwoFactorCodeInvalid'),
+      type: 'error',
+    })
+    return
+  }
+
+  isVerifyingTwoFactorCode.value = true
+
+  try {
+    const response = await fetch('/api/auth/2fa/verify', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+      },
+      body: JSON.stringify({
+        code: twoFactorDraft.code,
+      }),
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      throw new Error(data.message)
+    }
+
+    authUser.value = data.user
+    showToast({
+      title: t('success'),
+      message: t('twoFactorEnabledSuccess'),
+      type: 'success',
+    })
+
+    closeTwoFactorDialog()
+  } catch (error) {
+    showToast({
+      title: t('error'),
+      message: error.message || t('errTwoFactorVerify'),
+      type: 'error',
+    })
+  } finally {
+    isVerifyingTwoFactorCode.value = false
+  }
+}
+
+const reSendTwoFactorCode = async () => {
+  twoFactorCodeExpired.value = false
+  twoFactorDraft.code = ''
+  await sendTwoFactorCode()
+}
+
+const disableTwoFactor = async () => {
+  isDisablingTwoFactor.value = true
+
+  try {
+    const response = await fetch('/api/auth/2fa/disable', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+      },
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      throw new Error(data.message)
+    }
+
+    authUser.value = data.user
+    showToast({
+      title: t('success'),
+      message: t('twoFactorDisabledSuccess'),
+      type: 'success',
+    })
+  } catch (error) {
+    showToast({
+      title: t('error'),
+      message: error.message || t('errTwoFactorDisable'),
+      type: 'error',
+    })
+  } finally {
+    isDisablingTwoFactor.value = false
+  }
 }
 
 const onProfileImageSelected = (event) => {
@@ -1582,15 +1776,29 @@ const logoutAfterPasswordChange = async () => {
                   {{ t('twoFactorHint') }}
                 </p>
                 <div class="flex items-center justify-between">
-                  <span class="text-xs font-bold text-green-500 uppercase"
+                  <span v-if="authUser?.two_factor_enabled" class="text-xs font-bold text-green-500 uppercase"
                     >{{ t('enabled') }}</span
                   >
-                  <button
-                    class="text-sm text-primary font-bold hover:underline"
-                    type="button"
-                    @click="logout"
+                  <span v-else class="text-xs font-bold text-slate-400 uppercase"
+                    >{{ t('disabled') }}</span
                   >
-                    {{ t('logout') }}
+                  <button
+                    v-if="authUser?.two_factor_enabled"
+                    class="px-4 py-2 bg-red-50 dark:bg-red-950 text-red-600 dark:text-red-400 rounded-lg text-sm font-bold hover:bg-red-100 dark:hover:bg-red-900 transition-colors"
+                    type="button"
+                    :disabled="isDisablingTwoFactor"
+                    @click="disableTwoFactor"
+                  >
+                    {{ isDisablingTwoFactor ? '...' : t('twoFactorDisable') }}
+                  </button>
+                  <button
+                    v-else
+                    class="px-4 py-2 bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 rounded-lg text-sm font-bold hover:bg-blue-100 dark:hover:bg-blue-900 transition-colors"
+                    type="button"
+                    :disabled="isSendingTwoFactorCode"
+                    @click="openTwoFactorDialog"
+                  >
+                    {{ isSendingTwoFactorCode ? '...' : t('twoFactorEnable') }}
                   </button>
                 </div>
               </div>
@@ -1909,6 +2117,117 @@ const logoutAfterPasswordChange = async () => {
                 @click="closePasswordSuccessDialog"
               >
                 {{ t('returnToSettings') }}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2FA Enable Modal -->
+        <div
+          v-if="isTwoFactorDialogOpen && !twoFactorCodeSent"
+          class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 px-4"
+          @click.self="closeTwoFactorDialog"
+        >
+          <div class="w-full max-w-lg rounded-3xl border border-blue-200 bg-white p-6 shadow-2xl dark:border-blue-900/50 dark:bg-slate-900">
+            <div class="mb-6 flex items-start justify-between gap-4">
+              <div>
+                <h3 class="text-xl font-bold text-slate-900 dark:text-white">{{ t('twoFactorSetupTitle') }}</h3>
+                <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">{{ t('twoFactorSetupDescription') }}</p>
+              </div>
+              <button
+                class="rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+                type="button"
+                :disabled="isSendingTwoFactorCode"
+                @click="closeTwoFactorDialog"
+              >
+                <span class="material-symbols-outlined">close</span>
+              </button>
+            </div>
+
+            <div class="mt-6 flex items-center justify-end gap-3">
+              <button
+                class="rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-100 disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+                type="button"
+                :disabled="isSendingTwoFactorCode"
+                @click="closeTwoFactorDialog"
+              >
+                {{ t('cancel') }}
+              </button>
+              <button
+                class="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-blue-700 disabled:opacity-60"
+                type="button"
+                :disabled="isSendingTwoFactorCode"
+                @click="sendTwoFactorCode"
+              >
+                {{ isSendingTwoFactorCode ? t('twoFactorEnableSending') : t('twoFactorEnable') }}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2FA Verify Code Modal -->
+        <div
+          v-if="isTwoFactorDialogOpen && twoFactorCodeSent"
+          class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 px-4"
+          @click.self="closeTwoFactorDialog"
+        >
+          <div class="w-full max-w-lg rounded-3xl border border-green-200 bg-white p-6 shadow-2xl dark:border-green-900/50 dark:bg-slate-900">
+            <div class="mb-6 flex items-start justify-between gap-4">
+              <div>
+                <h3 class="text-xl font-bold text-slate-900 dark:text-white">{{ t('twoFactorVerifyTitle') }}</h3>
+                <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">{{ t('twoFactorVerifyDescription') }}</p>
+              </div>
+              <button
+                class="rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+                type="button"
+                :disabled="isVerifyingTwoFactorCode"
+                @click="closeTwoFactorDialog"
+              >
+                <span class="material-symbols-outlined">close</span>
+              </button>
+            </div>
+
+            <div v-if="twoFactorCodeExpired" class="mb-4 rounded-lg bg-rose-100 px-4 py-3 text-sm text-rose-700 dark:bg-rose-950/40 dark:text-rose-300">
+              {{ t('twoFactorCodeExpiredNotice') }}
+            </div>
+
+            <div class="flex flex-col gap-2 mb-6">
+              <label class="text-sm font-semibold text-slate-700 dark:text-slate-300">{{ t('twoFactorCodeLabel') }}</label>
+              <input
+                v-model="twoFactorDraft.code"
+                class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 text-center text-2xl font-bold tracking-widest outline-none transition-all focus:border-green-500 focus:ring-2 focus:ring-green-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                type="text"
+                maxlength="4"
+                placeholder="0000"
+                :disabled="twoFactorCodeExpired"
+              />
+            </div>
+
+            <div class="mt-6 flex items-center justify-end gap-3">
+              <button
+                class="rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-100 disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+                type="button"
+                :disabled="isVerifyingTwoFactorCode"
+                @click="closeTwoFactorDialog"
+              >
+                {{ t('cancel') }}
+              </button>
+              <button
+                v-if="twoFactorCodeExpired"
+                class="rounded-lg bg-slate-400 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-slate-500 disabled:opacity-60"
+                type="button"
+                @click="reSendTwoFactorCode"
+              >
+                {{ t('twoFactorCodeExpiredNotice') }}
+              </button>
+              <button
+                v-else
+                class="rounded-lg bg-green-600 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-green-700 disabled:opacity-60"
+                type="button"
+                :disabled="isVerifyingTwoFactorCode || twoFactorDraft.code.length !== 4"
+                @click="verifyTwoFactorCode"
+              >
+                {{ isVerifyingTwoFactorCode ? '...' : t('twoFactorVerifyCode') }}
               </button>
             </div>
           </div>
